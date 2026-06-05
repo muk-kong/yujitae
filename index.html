@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>유지태 | 러닝 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--orange:#FF4D1C;--orange-dim:#FF6B3D;--gold:#FFB800;--dark:#0E0E0E;--dark2:#161616;--dark3:#1E1E1E;--dark4:#2A2A2A;--text:#F0F0F0;--text-dim:#888;--green:#00E676;--blue:#2979FF;--border:rgba(255,255,255,0.06);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+.header{background:var(--dark2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Black Han Sans',sans-serif;font-size:17px;letter-spacing:1px;}.logo span{color:var(--orange);}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.hbtn{border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Noto Sans KR',sans-serif;}
+.hbtn-ghost{background:var(--dark4);color:var(--text-dim);border:1px solid var(--border);}.hbtn-ghost:hover{color:var(--text);border-color:var(--orange);}
+.hbtn-primary{background:var(--orange);color:white;}.hbtn-primary:hover{background:var(--orange-dim);}
+.hbtn-green{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3);}.hbtn-green:hover{background:rgba(0,230,118,.25);}
+.goal-badge{background:var(--dark4);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:12px;color:var(--text-dim);}.goal-badge b{color:var(--text);}
+.nav{background:var(--dark2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:4px;}
+.nav-tab{padding:12px 18px;font-size:13px;font-weight:700;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}.nav-tab:hover{color:var(--text);}.nav-tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+.page{display:none;}.page.active{display:block;}
+.container{max-width:1280px;margin:0 auto;padding:24px;}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.scard{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.scard.c-orange::before{background:var(--orange);}.scard.c-gold::before{background:var(--gold);}.scard.c-green::before{background:var(--green);}.scard.c-blue::before{background:var(--blue);}
+.scard-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.scard-val{font-size:28px;font-weight:700;line-height:1;margin-bottom:3px;}
+.scard.c-orange .scard-val{color:var(--orange);}.scard.c-gold .scard-val{color:var(--gold);}.scard.c-green .scard-val{color:var(--green);}.scard.c-blue .scard-val{color:var(--blue);}
+.scard-sub{font-size:11px;color:var(--text-dim);}
+.week-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.wtab{background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:11px;color:var(--text-dim);cursor:pointer;transition:all .2s;}.wtab:hover{border-color:var(--orange);color:var(--text);}.wtab.active{background:rgba(255,77,28,.15);border-color:var(--orange);color:var(--orange);font-weight:700;}
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-bottom:18px;}
+.panel{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:22px;}
+.ptitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);margin-bottom:18px;display:flex;align-items:center;gap:7px;}.ptitle .dot{width:5px;height:5px;border-radius:50%;background:var(--orange);}
+.rank-list{display:flex;flex-direction:column;gap:8px;}
+.rank-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark3);border-radius:10px;border:1px solid transparent;transition:all .2s;}.rank-item:hover{border-color:var(--orange);}.rank-item.top1{border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.04);}
+.rnum{font-family:'Black Han Sans',sans-serif;font-size:18px;width:26px;text-align:center;color:var(--text-dim);}.rank-item.top1 .rnum{color:var(--gold);}.rank-item.top2 .rnum{color:#C0C0C0;}.rank-item.top3 .rnum{color:#CD7F32;}
+.rinfo{flex:1;min-width:0;}.rname{font-size:14px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.rmeta{font-size:10px;color:var(--text-dim);}
+.rdist{font-size:16px;font-weight:700;color:var(--orange);white-space:nowrap;}.rdist small{font-size:10px;color:var(--text-dim);font-weight:400;}
+.prog-track{height:3px;background:var(--dark4);border-radius:2px;margin-top:4px;}.prog-fill{height:100%;border-radius:2px;transition:width .8s;}.prog-fill.over{background:var(--green);}.prog-fill.norm{background:var(--orange);}
+.over-badge{display:inline-block;background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:5px;vertical-align:middle;}
+.goal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.gcard{background:var(--dark3);border-radius:10px;padding:14px;border:1px solid var(--border);}
+.gmem{font-size:12px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.gpct{font-size:12px;font-weight:700;}.gpct.over{color:var(--green);}.gpct.done{color:var(--orange);}.gpct.mid{color:var(--gold);}.gpct.low{color:var(--text-dim);}
+.gbar-track{height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;margin-bottom:4px;}.gbar-fill{height:100%;border-radius:3px;transition:width 1s;}
+.gdetail{font-size:10px;color:var(--text-dim);}
+.log-table{width:100%;border-collapse:collapse;font-size:12px;}
+.log-table th{text-align:left;font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;padding:0 10px 10px;border-bottom:1px solid var(--border);}
+.log-table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle;}.log-table tr:last-child td{border-bottom:none;}.log-table tr:hover td{background:var(--dark3);}
+.chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;font-size:12px;font-weight:700;}
+.badge-in{background:rgba(41,121,255,.15);color:#64B5F6;border:1px solid rgba(41,121,255,.2);font-size:10px;padding:2px 6px;border-radius:3px;}
+.badge-out{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);font-size:10px;padding:2px 6px;border-radius:3px;}
+.badge-w{background:var(--dark4);color:var(--text-dim);font-size:10px;padding:2px 6px;border-radius:3px;}
+.photo-upload-box{width:100%;height:140px;background:var(--dark3);border:2px dashed var(--dark4);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:border-color .2s;}.photo-upload-box:hover{border-color:var(--orange);}
+.pph{text-align:center;pointer-events:none;}
+.photo-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;}
+.pgcard{border-radius:8px;overflow:hidden;position:relative;aspect-ratio:1;cursor:pointer;background:var(--dark3);}.pgcard img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s;}.pgcard:hover img{transform:scale(1.05);}
+.pginfo{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));padding:16px 6px 6px;font-size:10px;}
+.chart-wrap{height:200px;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}.overlay.show{display:flex;}
+.modal{background:var(--dark2);border:1px solid var(--border);border-radius:18px;padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;}.modal.wide{width:640px;}
+.mtitle{font-family:'Black Han Sans',sans-serif;font-size:18px;margin-bottom:20px;color:var(--orange);}
+.flabel{font-size:11px;color:var(--text-dim);margin-bottom:5px;display:block;letter-spacing:.5px;}
+.finput,.fselect{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s;}.finput:focus,.fselect:focus{border-color:var(--orange);}.fselect option{background:var(--dark3);}
+.frow{margin-bottom:14px;}.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.mbtns{display:flex;gap:8px;margin-top:20px;}
+.mbtn-cancel{flex:1;background:var(--dark4);border:1px solid var(--border);color:var(--text-dim);padding:11px;border-radius:9px;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.mbtn-ok{flex:2;background:var(--orange);border:none;color:white;padding:11px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;}.mbtn-ok:hover{background:var(--orange-dim);}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(8px);}.lb.show{display:flex;}
+.lb img{max-width:90vw;max-height:75vh;border-radius:10px;object-fit:contain;}.lb-info{color:var(--text-dim);font-size:12px;text-align:center;}.lb-close{position:absolute;top:18px;right:22px;background:none;border:none;color:var(--text-dim);font-size:26px;cursor:pointer;}
+/* TOTAL */
+.total-hero{background:linear-gradient(135deg,rgba(255,77,28,.12),rgba(255,184,0,.08));border:1px solid rgba(255,77,28,.2);border-radius:16px;padding:28px;margin-bottom:24px;text-align:center;}
+.total-hero-val{font-family:'Black Han Sans',sans-serif;font-size:56px;color:var(--orange);line-height:1;}
+.total-hero-sub{font-size:14px;color:var(--text-dim);margin-top:6px;}
+.total-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px;}
+.total-member-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.tmc-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;}.tmc-avatar{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;}
+.tmc-name{font-size:16px;font-weight:700;}.tmc-total{font-size:22px;font-weight:700;color:var(--orange);margin-bottom:2px;}.tmc-sub{font-size:11px;color:var(--text-dim);}
+.month-breakdown{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+.mb-row{display:flex;align-items:center;gap:8px;font-size:11px;}.mb-label{color:var(--text-dim);width:36px;flex-shrink:0;}.mb-bar-wrap{flex:1;height:5px;background:var(--dark4);border-radius:3px;overflow:hidden;}.mb-bar{height:100%;border-radius:3px;}.mb-val{color:var(--text-dim);width:38px;text-align:right;flex-shrink:0;}
+/* MONTHLY */
+.month-selector{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.msel-btn{background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-size:12px;color:var(--text-dim);cursor:pointer;transition:all .2s;}.msel-btn:hover{border-color:var(--orange);color:var(--text);}.msel-btn.active{background:rgba(255,77,28,.15);border-color:var(--orange);color:var(--orange);font-weight:700;}
+/* SETTINGS */
+.smem-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}.smem-row .chip{flex-shrink:0;}.smem-row .finput{margin:0;}
+.sdanger-btn{background:rgba(255,50,50,.1);border:1px solid rgba(255,50,50,.3);color:#ff6666;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}.sdanger-btn:hover{background:rgba(255,50,50,.2);}
+.sadd-btn{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);color:var(--green);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-top:6px;}
+/* BADGE PANEL */
+.badge-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.badge-card{background:var(--dark3);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;transition:all .2s;}
+.badge-card.earned{border-color:rgba(255,184,0,.4);background:rgba(255,184,0,.05);}
+.badge-card.new-earned{animation:badgePop .5s ease;}
+@keyframes badgePop{0%{transform:scale(.9);opacity:.5;}60%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;}}
+.badge-icon{font-size:32px;flex-shrink:0;}
+.badge-info .badge-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.badge-info .badge-desc{font-size:10px;color:var(--text-dim);}
+.badge-card:not(.earned){opacity:.35;}
+/* STREAK */
+.streak-bar{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+.streak-dot{width:10px;height:10px;border-radius:3px;background:var(--dark4);}
+.streak-dot.active{background:var(--orange);}
+.streak-dot.today{background:var(--green);}
+/* SHOE TRACKER */
+.shoe-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.shoe-row:last-child{border-bottom:none;}
+.shoe-bar-wrap{flex:1;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;}
+.shoe-bar-fill{height:100%;border-radius:3px;transition:width 1s;}
+/* NOTICE */
+.notice-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
+.notice-item:last-child{border-bottom:none;}
+.notice-dot{width:6px;height:6px;border-radius:50%;background:var(--orange);margin-top:5px;flex-shrink:0;}
+/* SHARE CARD */
+.share-preview{background:linear-gradient(135deg,#1a0a06,#1a1208);border:1px solid rgba(255,77,28,.3);border-radius:16px;padding:24px;text-align:center;margin-bottom:16px;}
+/* ALERT */
+.alert-toast{position:fixed;bottom:24px;right:24px;background:var(--dark2);border:1px solid var(--green);border-radius:12px;padding:14px 20px;font-size:13px;color:var(--green);z-index:999;display:none;animation:slideUp .3s ease;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+/* EXPORT BTN */
+.export-row{display:flex;gap:8px;margin-bottom:16px;}
+/* FINE PAGE */
+.fine-hero{background:linear-gradient(135deg,rgba(255,184,0,.1),rgba(255,77,28,.06));border:1px solid rgba(255,184,0,.25);border-radius:16px;padding:28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:16px;text-align:center;}
+.fine-hero-item .fh-val{font-family:'Black Han Sans',sans-serif;font-size:40px;line-height:1;}
+.fine-hero-item .fh-label{font-size:11px;color:var(--text-dim);margin-top:4px;}
+.fine-member-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;transition:all .2s;}
+.fine-member-card:hover{border-color:rgba(255,184,0,.3);}
+.fine-member-card.has-fine{border-color:rgba(255,77,28,.3);}
+.fine-member-card.paid-all{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.03);}
+.fmc-info{flex:1;min-width:0;}
+.fmc-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.fmc-detail{font-size:11px;color:var(--text-dim);}
+.fmc-amount{text-align:right;}
+.fmc-owed{font-size:20px;font-weight:700;color:var(--orange);}
+.fmc-paid{font-size:11px;color:var(--text-dim);margin-top:2px;}
+.paid-btn{background:rgba(0,230,118,.15);border:1px solid rgba(0,230,118,.3);color:var(--green);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;}
+.paid-btn:hover{background:rgba(0,230,118,.25);}
+.fine-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:24px;}
+.expense-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--dark3);border-radius:10px;border:1px solid var(--border);}
+.exp-icon{font-size:22px;flex-shrink:0;}
+.exp-info{flex:1;min-width:0;}
+.exp-title{font-size:13px;font-weight:700;}
+.exp-date{font-size:10px;color:var(--text-dim);margin-top:2px;}
+.exp-amount{font-size:15px;font-weight:700;color:var(--gold);white-space:nowrap;}
+.exp-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:4px;}
+.exp-del:hover{color:#ff6666;}
+@media(max-width:900px){.summary-grid{grid-template-columns:1fr 1fr;}.main-grid{grid-template-columns:1fr;}.badge-section{grid-template-columns:1fr 1fr;}.fine-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">유지<span>태</span> 🏃</div>
+  <div class="header-right">
+    <div class="goal-badge">주 목표 <b id="goal-badge-val">10km</b></div>
+    <button class="hbtn hbtn-ghost" onclick="checkStorage()" id="storage-btn" style="font-size:11px;">💾 저장 확인</button>
+    <button class="hbtn hbtn-green" onclick="exportCSV()">📥 내보내기</button>
+    <button class="hbtn hbtn-ghost" onclick="openSettings()">⚙️ 설정</button>
+    <button class="hbtn hbtn-primary" onclick="openAddLog()">+ 기록 추가</button>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="nav-tab active" onclick="switchPage('weekly',this)">📅 주간 현황</div>
+  <div class="nav-tab" onclick="switchPage('monthly',this)">🗓️ 월별 관리</div>
+  <div class="nav-tab" onclick="switchPage('total',this)">🏆 총합 현황</div>
+  <div class="nav-tab" onclick="switchPage('motivation',this)">🎖️ 동기부여</div>
+  <div class="nav-tab" onclick="switchPage('fine',this)">💸 벌금 관리</div>
+</nav>
+
+<!-- WEEKLY -->
+<div class="page active" id="page-weekly">
+<div class="container">
+  <div class="summary-grid">
+    <div class="scard c-orange"><div class="scard-label">이번주 총 거리</div><div class="scard-val" id="w-total">0</div><div class="scard-sub">km</div></div>
+    <div class="scard c-gold"><div class="scard-label">목표 달성 인원</div><div class="scard-val" id="w-achieved">0</div><div class="scard-sub" id="w-achieved-sub">명</div></div>
+    <div class="scard c-green"><div class="scard-label">초과달성 인원</div><div class="scard-val" id="w-over">0</div><div class="scard-sub">명 🔥</div></div>
+    <div class="scard c-blue"><div class="scard-label">이번주 인증</div><div class="scard-val" id="w-logs">0</div><div class="scard-sub">회</div></div>
+  </div>
+  <div class="week-tabs" id="month-pick" style="margin-bottom:8px;"></div>
+  <div class="week-tabs" id="week-tabs"></div>
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>월간 누적 추이</div>
+        <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>목표 달성률 <span id="goal-panel-label" style="color:var(--orange);margin-left:4px;font-size:10px;text-transform:none;letter-spacing:0;"></span></div>
+        <div class="goal-grid" id="goal-grid"></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>인증샷 갤러리</div>
+        <div class="photo-gallery" id="photo-gallery"><div style="color:var(--text-dim);font-size:12px;padding:16px 0;grid-column:1/-1;text-align:center">아직 인증샷이 없어요 📸</div></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>전체 기록</div>
+        <div style="overflow-x:auto;">
+          <table class="log-table">
+            <thead><tr><th>날짜</th><th>회원</th><th>거리</th><th>페이스</th><th>구분</th><th>날씨</th><th>신발</th><th>사진</th><th>관리</th></tr></thead>
+            <tbody id="log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>이번주 랭킹</div>
+        <div class="rank-list" id="ranking-list"></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>미달성 인원</div>
+        <div id="undone-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MONTHLY -->
+<div class="page" id="page-monthly">
+<div class="container">
+  <div class="month-selector" id="month-selector"></div>
+  <div class="summary-grid">
+    <div class="scard c-orange"><div class="scard-label">월 총 거리</div><div class="scard-val" id="m-total">0</div><div class="scard-sub">km</div></div>
+    <div class="scard c-gold"><div class="scard-label">인증 횟수</div><div class="scard-val" id="m-logs">0</div><div class="scard-sub">회</div></div>
+    <div class="scard c-green"><div class="scard-label">평균 거리/회</div><div class="scard-val" id="m-avg">0</div><div class="scard-sub">km</div></div>
+    <div class="scard c-blue"><div class="scard-label">이달 MVP</div><div class="scard-val" id="m-top" style="font-size:18px;padding-top:4px">-</div><div class="scard-sub" id="m-top-sub"></div></div>
+  </div>
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>회원별 월간 거리</div>
+        <div class="chart-wrap"><canvas id="monthlyBarChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>주차별 상세</div>
+        <div id="monthly-week-breakdown"></div>
+      </div>
+    </div>
+    <div class="panel" style="height:fit-content;">
+      <div class="ptitle"><span class="dot"></span>이달 랭킹</div>
+      <div class="rank-list" id="monthly-ranking"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TOTAL -->
+<div class="page" id="page-total">
+<div class="container">
+  <div class="total-hero">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:2px">크루 전체 누적 거리</div>
+    <div class="total-hero-val" id="total-grand">0</div>
+    <div class="total-hero-sub">km · 지구 둘레의 <span id="total-earth" style="color:var(--orange)">0</span>%</div>
+  </div>
+  <div class="summary-grid">
+    <div class="scard c-orange"><div class="scard-label">총 인증 횟수</div><div class="scard-val" id="t-logs">0</div><div class="scard-sub">회</div></div>
+    <div class="scard c-gold"><div class="scard-label">활동 기간</div><div class="scard-val" id="t-days" style="font-size:20px;padding-top:4px">-</div><div class="scard-sub">일째 달리는 중</div></div>
+    <div class="scard c-green"><div class="scard-label">최장 단일 기록</div><div class="scard-val" id="t-best">0</div><div class="scard-sub" id="t-best-sub">km</div></div>
+    <div class="scard c-blue"><div class="scard-label">크루 인원</div><div class="scard-val" id="t-members">0</div><div class="scard-sub">명</div></div>
+  </div>
+  <div class="total-grid" id="total-member-cards"></div>
+  <div class="panel">
+    <div class="ptitle"><span class="dot"></span>월별 크루 총 거리 추이</div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="totalTrendChart"></canvas></div>
+  </div>
+</div>
+</div>
+
+<!-- MOTIVATION -->
+<div class="page" id="page-motivation">
+<div class="container">
+  <!-- 주간 결과 카드 공유 -->
+  <div class="panel" style="margin-bottom:18px;">
+    <div class="ptitle"><span class="dot"></span>📤 주간 결과 공유 카드</div>
+    <div class="share-preview" id="share-preview"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="hbtn hbtn-primary" onclick="copyShareText()" style="flex:1;padding:10px;">📋 텍스트 복사 (카카오톡)</button>
+      <button class="hbtn hbtn-ghost" onclick="downloadShareCard()" style="flex:1;padding:10px;">🖼️ 이미지로 저장</button>
+    </div>
+  </div>
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- BADGES -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>🏅 뱃지 현황</div>
+        <div id="badge-member-select" style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div class="badge-section" id="badge-section"></div>
+      </div>
+      <!-- STREAK -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>🔥 연속 인증 스트릭</div>
+        <div id="streak-section"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- SHOE TRACKER -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>👟 신발 누적 km</div>
+        <div id="shoe-tracker"></div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:12px;">* 500km 이상 시 교체 권장</div>
+      </div>
+      <!-- PACE TREND -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>📈 페이스 추이</div>
+        <div id="pace-member-select" style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div class="chart-wrap"><canvas id="paceChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FINE PAGE -->
+<div class="page" id="page-fine">
+<div class="container">
+  <!-- 히어로 -->
+  <div class="fine-hero">
+    <div class="fine-hero-item"><div class="fh-val" id="f-total-pot" style="color:var(--gold)">0</div><div class="fh-label">💰 총 적립 벌금</div></div>
+    <div class="fine-hero-item"><div class="fh-val" id="f-total-spent" style="color:var(--orange)">0</div><div class="fh-label">💸 총 사용 금액</div></div>
+    <div class="fine-hero-item"><div class="fh-val" id="f-balance" style="color:var(--green)">0</div><div class="fh-label">🏦 잔액</div></div>
+    <div class="fine-hero-item"><div class="fh-val" id="f-unpaid" style="color:#ff6666">0</div><div class="fh-label">⏳ 미납 금액</div></div>
+  </div>
+
+  <!-- 벌금왕 -->
+  <div class="panel" style="margin-bottom:18px;">
+    <div class="ptitle"><span class="dot"></span>👑 벌금왕 명예의 전당</div>
+    <div id="fine-king-section" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+  </div>
+
+  <!-- 주차 선택 -->
+  <div style="margin-bottom:16px;">
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">벌금 기준 주차</div>
+    <div class="week-tabs" id="fine-month-pick" style="margin-bottom:6px;"></div>
+    <div class="week-tabs" id="fine-week-tabs"></div>
+  </div>
+
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- 회원별 벌금 현황 -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>회원별 벌금 현황 <span style="color:var(--orange);margin-left:4px;font-size:10px;text-transform:none;letter-spacing:0;" id="fine-week-label"></span></div>
+        <div class="fine-grid" id="fine-member-grid"></div>
+      </div>
+      <!-- 납부 내역 -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>벌금 납부 내역</div>
+        <div id="payment-list"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- 사용 내역 -->
+      <div class="panel">
+        <div class="ptitle" style="justify-content:space-between;">
+          <span><span class="dot"></span>사용 내역</span>
+          <button class="paid-btn" onclick="openAddExpense()">+ 추가</button>
+        </div>
+        <div id="expense-list"></div>
+      </div>
+      <!-- 벌금 설정 -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>벌금 설정</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:12px;color:var(--text-dim);">주간 미달성 벌금</span>
+          <input type="number" id="fine-amount-input" class="finput" value="5000" style="max-width:100px;text-align:center;">
+          <span style="font-size:12px;color:var(--text-dim);">원</span>
+          <button onclick="saveFineAmount()" class="paid-btn">저장</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">
+          • 주간 목표 미달성 시 자동 산정<br>
+          • 납부 처리는 수동으로 확인 후 클릭<br>
+          • 사용 내역 추가 시 잔액에서 차감
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" onclick="closeLb()">
+  <button class="lb-close" onclick="closeLb()">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lb-info" id="lb-info"></div>
+</div>
+
+<!-- ADD EXPENSE MODAL -->
+<div class="overlay" id="expense-modal">
+  <div class="modal">
+    <div class="mtitle">💸 사용 내역 추가</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="exp-date"></div>
+    <div class="frow"><label class="flabel">내용</label><input type="text" class="finput" id="exp-title" placeholder="예: 1월 러닝 상금"></div>
+    <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="exp-amount" placeholder="10000" min="0"></div>
+    <div class="frow">
+      <label class="flabel">카테고리</label>
+      <select class="fselect" id="exp-category">
+        <option value="상금">🏆 상금/포상</option>
+        <option value="회식">🍖 회식/모임</option>
+        <option value="용품">👟 크루 용품</option>
+        <option value="기타">📦 기타</option>
+      </select>
+    </div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddExpense()">취소</button><button class="mbtn-ok" onclick="submitExpense()">저장 ✓</button></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="edit-modal">
+  <div class="modal">
+    <div class="mtitle">✏️ 기록 수정</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="e-date"></div>
+    <div class="frow"><label class="flabel">회원</label><select class="fselect" id="e-member"></select></div>
+    <div class="frow2">
+      <div><label class="flabel">거리 (km)</label><input type="number" class="finput" id="e-dist" step="0.1" min="0"></div>
+      <div><label class="flabel">페이스 (분/km)</label><input type="text" class="finput" id="e-pace"></div>
+    </div>
+    <div class="frow2">
+      <div><label class="flabel">실내/외</label><select class="fselect" id="e-type"><option>실외</option><option>실내</option></select></div>
+      <div><label class="flabel">날씨</label><select class="fselect" id="e-weather"><option>맑음</option><option>흐림</option><option>비</option><option>눈</option><option>실내</option></select></div>
+    </div>
+    <div class="frow"><label class="flabel">신발</label><input type="text" class="finput" id="e-shoe"></div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeEditLog()">취소</button><button class="mbtn-ok" onclick="submitEdit()">수정 저장 ✓</button></div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="add-modal">
+  <div class="modal">
+    <div class="mtitle">🏃 기록 추가</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="f-date"></div>
+    <div class="frow"><label class="flabel">회원</label><select class="fselect" id="f-member"><option value="">선택</option></select></div>
+    <div class="frow2">
+      <div><label class="flabel">거리 (km)</label><input type="number" class="finput" id="f-dist" placeholder="5.0" step="0.1" min="0"></div>
+      <div><label class="flabel">페이스 (분/km)</label><input type="text" class="finput" id="f-pace" placeholder="6'30&quot;"></div>
+    </div>
+    <div class="frow2">
+      <div><label class="flabel">실내/외</label><select class="fselect" id="f-type"><option>실외</option><option>실내</option></select></div>
+      <div><label class="flabel">날씨</label><select class="fselect" id="f-weather"><option>맑음</option><option>흐림</option><option>비</option><option>눈</option><option>실내</option></select></div>
+    </div>
+    <div class="frow"><label class="flabel">신발</label><input type="text" class="finput" id="f-shoe" placeholder="나이키 페가수스 41"></div>
+    <div class="frow">
+      <label class="flabel">인증샷</label>
+      <div class="photo-upload-box" onclick="document.getElementById('f-photo').click()">
+        <input type="file" id="f-photo" accept="image/*" style="display:none" onchange="previewPhoto(event)">
+        <div class="pph" id="pph"><div style="font-size:24px;margin-bottom:6px">📸</div><div style="font-size:12px;color:var(--text-dim)">클릭해서 업로드</div></div>
+        <img id="ph-preview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px">
+        <button id="ph-remove" onclick="removePhoto(event)" style="display:none;position:absolute;top:7px;right:7px;background:rgba(0,0,0,.65);border:none;color:white;width:26px;height:26px;border-radius:50%;font-size:13px;cursor:pointer;line-height:26px;text-align:center;">✕</button>
+      </div>
+    </div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddLog()">취소</button><button class="mbtn-ok" onclick="submitLog()">저장 ✓</button></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settings-modal">
+  <div class="modal wide">
+    <div class="mtitle">⚙️ 설정</div>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">주간 목표 거리</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="number" class="finput" id="s-goal" placeholder="10" step="0.5" min="1" style="max-width:120px">
+        <span style="color:var(--text-dim)">km / 주</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">회원 관리</div>
+      <div id="s-members"></div>
+      <button class="sadd-btn" onclick="addMemberRow()">+ 회원 추가</button>
+    </div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeSettings()">취소</button><button class="mbtn-ok" onclick="saveSettings()">저장 ✓</button></div>
+  </div>
+</div>
+
+<div class="alert-toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let GOAL=10;
+let members=[
+  {id:'1',name:'회원 1'},{id:'2',name:'회원 2'},{id:'3',name:'회원 3'},
+  {id:'4',name:'회원 4'},{id:'5',name:'회원 5'},{id:'6',name:'회원 6'},{id:'7',name:'회원 7'},
+];
+let nextId=8;
+const PALETTE=[
+  {bg:'rgba(255,77,28,.2)',fg:'#FF4D1C'},{bg:'rgba(41,121,255,.2)',fg:'#2979FF'},
+  {bg:'rgba(0,230,118,.2)',fg:'#00E676'},{bg:'rgba(255,184,0,.2)',fg:'#FFB800'},
+  {bg:'rgba(233,30,99,.2)',fg:'#E91E63'},{bg:'rgba(156,39,176,.2)',fg:'#9C27B0'},
+  {bg:'rgba(0,188,212,.2)',fg:'#00BCD4'},{bg:'rgba(255,235,59,.2)',fg:'#FDD835'},
+  {bg:'rgba(0,150,136,.2)',fg:'#009688'},{bg:'rgba(121,85,72,.2)',fg:'#795548'},
+];
+function getColor(idx){return PALETTE[idx%PALETTE.length];}
+function memberColor(id){const i=members.findIndex(m=>m.id===id);return getColor(i<0?0:i);}
+function memberName(id){const m=members.find(m=>m.id===id);return m?m.name:id;}
+function avatarHtml(id,size=34){
+  const c=memberColor(id);
+  return `<div style="width:${size}px;height:${size}px;border-radius:${Math.round(size*.28)}px;background:${c.bg};color:${c.fg};display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:${Math.round(size*.38)}px;flex-shrink:0;">${id}</div>`;
+}
+let logs=[];
+let selectedWeek=null, selectedWeekMonth=null, selectedMonth=null;
+let charts={};
+let badgeMemberId=null, paceMemberId=null;
+
+// ── HELPERS ──
+function getMonday(d){
+  const dt = new Date(d);
+  // 로컬 기준으로 요일 계산
+  const day = dt.getDay(); // 0=일, 1=월 ... 6=토
+  const diff = day === 0 ? -6 : 1 - day; // 일요일이면 -6, 그 외 월요일로
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function getSunday(mon){const d=new Date(mon);d.setDate(d.getDate()+6);d.setHours(23,59,59,999);return d;}
+function fmt(d){
+  // 로컬 날짜 기준으로 YYYY-MM-DD 반환 (UTC 변환 오류 방지)
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function fmtLabel(mon){const s=getSunday(mon);return `${mon.getMonth()+1}/${mon.getDate()}~${s.getMonth()+1}/${s.getDate()}`;}
+function curMonday(){return getMonday(new Date());}
+function curYM(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;}
+function getWeeksInMonth(ym){
+  const[y,m]=ym.split('-').map(Number);
+  const first=new Date(y,m-1,1),last=new Date(y,m,0);
+  const weeks=[];let mon=getMonday(first);
+  while(mon<=last){weeks.push(new Date(mon));mon=new Date(mon);mon.setDate(mon.getDate()+7);}
+  return weeks;
+}
+function getDistInRange(mid,start,end){return logs.filter(l=>l.member===mid&&l.date>=start&&l.date<=end).reduce((s,l)=>s+l.dist,0);}
+function getAvailableMonths(){
+  const set=new Set(logs.map(l=>l.date.slice(0,7)));set.add(curYM());
+  return[...set].sort();
+}
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.style.display='block';
+  setTimeout(()=>el.style.display='none',2500);
+}
+
+// ── NAV ──
+function switchPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='weekly')renderWeekly();
+  if(id==='monthly')renderMonthly();
+  if(id==='total')renderTotal();
+  if(id==='motivation')renderMotivation();
+  if(id==='fine')renderFine();
+}
+
+// ── WEEKLY ──
+function renderWeekly(){
+  renderWeekTabs();
+  const mon=selectedWeek||curMonday();
+  const sun=getSunday(mon);
+  const start=fmt(mon),end=fmt(sun);
+  const totals={};members.forEach(m=>{totals[m.id]=getDistInRange(m.id,start,end);});
+  const totalDist=Object.values(totals).reduce((a,b)=>a+b,0);
+  const achieved=members.filter(m=>totals[m.id]>=GOAL).length;
+  const over=members.filter(m=>totals[m.id]>GOAL).length;
+  const weekLogs=logs.filter(l=>l.date>=start&&l.date<=end);
+  document.getElementById('w-total').textContent=totalDist.toFixed(1);
+  document.getElementById('w-achieved').textContent=achieved;
+  document.getElementById('w-achieved-sub').textContent=`명 / ${members.length}명`;
+  document.getElementById('w-over').textContent=over;
+  document.getElementById('w-logs').textContent=weekLogs.length;
+  document.getElementById('goal-badge-val').textContent=GOAL+'km';
+  document.getElementById('goal-panel-label').textContent=`${fmtLabel(mon)} · 목표 ${GOAL}km`;
+
+  // RANKING
+  const sorted=[...members].sort((a,b)=>totals[b.id]-totals[a.id]);
+  document.getElementById('ranking-list').innerHTML=sorted.map((m,i)=>{
+    const dist=totals[m.id],pct=Math.min((dist/GOAL)*100,100),isOver=dist>GOAL;
+    const cls=i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+    return `<div class="rank-item ${cls}">
+      <div class="rnum">${medal}</div>${avatarHtml(m.id,34)}
+      <div class="rinfo">
+        <div class="rname">${m.name}${isOver?'<span class="over-badge">초과</span>':''}</div>
+        <div class="prog-track"><div class="prog-fill ${isOver?'over':'norm'}" style="width:${pct}%"></div></div>
+        <div class="rmeta" style="margin-top:3px">${dist.toFixed(1)}km / ${GOAL}km</div>
+      </div>
+      <div class="rdist">${dist.toFixed(1)}<small>km</small></div>
+    </div>`;
+  }).join('');
+
+  // UNDONE
+  const undone=members.filter(m=>totals[m.id]<GOAL);
+  document.getElementById('undone-list').innerHTML=undone.length===0
+    ?'<div style="color:var(--green);font-size:13px;text-align:center;padding:8px">🎉 전원 달성!</div>'
+    :undone.map(m=>{
+      const dist=totals[m.id],remain=(GOAL-dist).toFixed(1);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        ${avatarHtml(m.id,28)}
+        <div style="flex:1;font-size:12px;">${m.name}</div>
+        <div style="font-size:11px;color:var(--orange);">잔여 ${remain}km</div>
+      </div>`;
+    }).join('');
+
+  // GOAL GRID
+  const goalEl=document.getElementById('goal-grid');
+  goalEl.innerHTML=members.map(m=>{
+    const dist=totals[m.id],pct=(dist/GOAL)*100,isOver=dist>GOAL;
+    let cls='low',barC='#555';
+    if(isOver){cls='over';barC='#00E676';}else if(pct>=100){cls='done';barC='#FF4D1C';}else if(pct>=60){cls='mid';barC='#FFB800';}
+    return `<div class="gcard">
+      <div class="gmem"><span style="display:flex;align-items:center;gap:6px;">${avatarHtml(m.id,20)}<span>${m.name}</span></span><span class="gpct ${cls}">${isOver?'🔥 ':''}${Math.round(pct)}%</span></div>
+      <div class="gbar-track"><div class="gbar-fill" style="width:${Math.min(pct,100)}%;background:${barC}"></div></div>
+      <div class="gdetail">${dist.toFixed(1)}km / ${GOAL}km${isOver?` (+${(dist-GOAL).toFixed(1)}km 초과)`:''}</div>
+    </div>`;
+  }).join('');
+
+  // LOG TABLE
+  const tbody=document.getElementById('log-tbody');
+  const recent=[...logs].map((l,i)=>({...l,_idx:i})).sort((a,b)=>b.date.localeCompare(a.date));
+  tbody.innerHTML=recent.length===0
+    ?`<tr><td colspan="9" style="text-align:center;color:var(--text-dim);padding:32px">기록이 없어요. + 기록 추가로 시작해보세요 🏃</td></tr>`
+    :recent.map(l=>`<tr>
+      <td style="color:var(--text-dim)">${l.date}</td>
+      <td>${avatarHtml(l.member,26)}</td>
+      <td><b>${l.dist.toFixed(1)}</b><span style="font-size:10px;color:var(--text-dim)">km</span></td>
+      <td style="color:var(--text-dim)">${l.pace}</td>
+      <td><span class="${l.type==='실내'?'badge-in':'badge-out'}">${l.type}</span></td>
+      <td><span class="badge-w">${l.weather}</span></td>
+      <td style="color:var(--text-dim);font-size:11px">${l.shoe}</td>
+      <td>${l.photo?`<img src="${l.photo}" onclick="openLb('${l.photo}','${memberName(l.member)} · ${l.date}')" style="width:32px;height:32px;border-radius:5px;object-fit:cover;cursor:pointer;">`:'<span style="color:var(--dark4)">—</span>'}</td>
+      <td style="white-space:nowrap;">
+        <button onclick="openEditLog(${l._idx})" style="background:rgba(255,184,0,.15);border:1px solid rgba(255,184,0,.3);color:#FFB800;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-right:4px;">✏️</button>
+        <button onclick="deleteLog(${l._idx})" style="background:rgba(255,50,50,.1);border:1px solid rgba(255,50,50,.3);color:#ff6666;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">🗑️</button>
+      </td>
+    </tr>`).join('');
+
+  // GALLERY
+  const gallery=document.getElementById('photo-gallery');
+  const withPhoto=[...logs].filter(l=>l.photo).sort((a,b)=>b.date.localeCompare(a.date));
+  gallery.innerHTML=!withPhoto.length
+    ?'<div style="color:var(--text-dim);font-size:12px;padding:16px 0;grid-column:1/-1;text-align:center">아직 인증샷이 없어요 📸</div>'
+    :withPhoto.map(l=>`<div class="pgcard" onclick="openLb('${l.photo}','${memberName(l.member)} · ${l.date} · ${l.dist}km')">
+        <img src="${l.photo}" alt=""><div class="pginfo">${avatarHtml(l.member,18)} <span>${l.dist}km</span> <span style="color:#aaa">${l.date.slice(5)}</span></div>
+      </div>`).join('');
+
+  renderMonthlyLineChart(selectedWeekMonth||curYM());
+}
+
+function renderWeekTabs(){
+  const todayYM=curYM();
+  const months=getAvailableMonths();
+  if(!selectedWeekMonth)selectedWeekMonth=todayYM;
+  document.getElementById('month-pick').innerHTML=months.map(ym=>
+    `<div class="wtab ${ym===selectedWeekMonth?'active':''}" style="font-weight:700;" onclick="pickWeekMonth('${ym}')">${parseInt(ym.slice(5))}월${ym===todayYM?' ★':''}</div>`
+  ).join('');
+  const weeks=getWeeksInMonth(selectedWeekMonth);
+  const curMon=fmt(curMonday());
+  const activeMon=selectedWeek&&fmt(selectedWeek).startsWith(selectedWeekMonth.slice(0,7).replace('-',''))?fmt(selectedWeek):(selectedWeekMonth===todayYM?curMon:fmt(weeks[0]));
+  document.getElementById('week-tabs').innerHTML=weeks.map(w=>{
+    const wf=fmt(w);
+    return `<div class="wtab ${wf===activeMon?'active':''}" onclick="selectWeek('${wf}')">${fmtLabel(w)}${wf===curMon?' 이번주':''}</div>`;
+  }).join('');
+  if(!selectedWeek){selectedWeek=selectedWeekMonth===todayYM?curMonday():weeks[0];}
+}
+function pickWeekMonth(ym){selectedWeekMonth=ym;selectedWeek=null;renderWeekly();}
+function selectWeek(ms){selectedWeek=new Date(ms);renderWeekly();}
+
+function renderMonthlyLineChart(ym){
+  const[y,m]=ym.split('-').map(Number);
+  const days=new Date(y,m,0).getDate();
+  const labels=Array.from({length:days},(_,i)=>i+1+'일');
+  const datasets=members.map((mem,idx)=>{
+    let cum=0;
+    const data=Array.from({length:days},(_,i)=>{
+      const d=String(i+1).padStart(2,'0');
+      cum+=logs.filter(l=>l.member===mem.id&&l.date===`${ym}-${d}`).reduce((s,l)=>s+l.dist,0);
+      return parseFloat(cum.toFixed(1));
+    });
+    const c=getColor(idx);
+    return{label:mem.name,data,borderColor:c.fg,backgroundColor:c.fg+'22',borderWidth:2,pointRadius:2,pointHoverRadius:5,tension:.4,fill:false};
+  });
+  const ctx=document.getElementById('monthChart').getContext('2d');
+  if(charts.monthly)charts.monthly.destroy();
+  charts.monthly=new Chart(ctx,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#888',font:{size:10},boxWidth:10}},tooltip:{backgroundColor:'#1E1E1E',borderColor:'#333',borderWidth:1,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}km`}}},
+    scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{size:10},callback:v=>v+'km'},beginAtZero:true}},
+    interaction:{mode:'index',intersect:false}},
+    plugins:[{id:'gl',afterDraw(chart){
+      const{ctx,scales:{y}}=chart;if(!y)return;
+      const yPos=y.getPixelForValue(GOAL);ctx.save();ctx.strokeStyle='rgba(255,77,28,.4)';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+      ctx.beginPath();ctx.moveTo(chart.chartArea.left,yPos);ctx.lineTo(chart.chartArea.right,yPos);ctx.stroke();
+      ctx.fillStyle='rgba(255,77,28,.7)';ctx.font='10px Noto Sans KR';ctx.fillText(`주 목표 ${GOAL}km`,chart.chartArea.right-70,yPos-4);ctx.restore();
+    }}]
+  });
+}
+
+// ── MONTHLY ──
+function renderMonthly(){
+  if(!selectedMonth)selectedMonth=curYM();
+  const months=getAvailableMonths();
+  document.getElementById('month-selector').innerHTML=months.map(ym=>
+    `<button class="msel-btn ${ym===selectedMonth?'active':''}" onclick="selectMonth('${ym}')">${ym}</button>`).join('');
+  renderMonthlyData();
+}
+function selectMonth(ym){selectedMonth=ym;renderMonthly();}
+function renderMonthlyData(){
+  const ym=selectedMonth;
+  const mLogs=logs.filter(l=>l.date.startsWith(ym));
+  const totals={};members.forEach(m=>{totals[m.id]=mLogs.filter(l=>l.member===m.id).reduce((s,l)=>s+l.dist,0);});
+  const totalDist=Object.values(totals).reduce((a,b)=>a+b,0);
+  const avgDist=mLogs.length?totalDist/mLogs.length:0;
+  const topM=[...members].sort((a,b)=>totals[b.id]-totals[a.id])[0];
+  document.getElementById('m-total').textContent=totalDist.toFixed(1);
+  document.getElementById('m-logs').textContent=mLogs.length;
+  document.getElementById('m-avg').textContent=avgDist.toFixed(1);
+  document.getElementById('m-top').textContent=topM?topM.name:'-';
+  document.getElementById('m-top-sub').textContent=topM?`${totals[topM.id].toFixed(1)}km · 🏆 MVP`:'';
+  const sorted=[...members].sort((a,b)=>totals[b.id]-totals[a.id]);
+  document.getElementById('monthly-ranking').innerHTML=sorted.map((m,i)=>{
+    const dist=totals[m.id],pct=Math.min((dist/GOAL)*100,100);
+    const cls=i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+    return `<div class="rank-item ${cls}"><div class="rnum">${medal}</div>${avatarHtml(m.id,34)}
+      <div class="rinfo"><div class="rname">${m.name}</div><div class="prog-track"><div class="prog-fill norm" style="width:${pct}%"></div></div><div class="rmeta" style="margin-top:3px">${dist.toFixed(1)}km</div></div>
+      <div class="rdist">${dist.toFixed(1)}<small>km</small></div></div>`;
+  }).join('');
+  const ctx=document.getElementById('monthlyBarChart').getContext('2d');
+  if(charts.mbar)charts.mbar.destroy();
+  charts.mbar=new Chart(ctx,{type:'bar',data:{labels:sorted.map(m=>m.name),datasets:[{label:'거리(km)',data:sorted.map(m=>totals[m.id].toFixed(1)),
+    backgroundColor:sorted.map((_,i)=>getColor(members.findIndex(m=>m.id===sorted[i].id)).fg+'99'),borderColor:sorted.map((_,i)=>getColor(members.findIndex(m=>m.id===sorted[i].id)).fg),borderWidth:2,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1E1E1E',borderColor:'#333',borderWidth:1,callbacks:{label:c=>` ${c.raw}km`}}},
+    scales:{x:{grid:{display:false},ticks:{color:'#888',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{size:10},callback:v=>v+'km'},beginAtZero:true}}}});
+  const weeks=getWeeksInMonth(ym);
+  document.getElementById('monthly-week-breakdown').innerHTML=weeks.map((w,wi)=>{
+    const sun=getSunday(w),start=fmt(w),end=fmt(sun);
+    const wTotals={};members.forEach(m=>{wTotals[m.id]=getDistInRange(m.id,start,end);});
+    const wTotal=Object.values(wTotals).reduce((a,b)=>a+b,0);
+    const rows=members.map(m=>{
+      const d=wTotals[m.id],pct=Math.min((d/GOAL)*100,100),isOver=d>GOAL;
+      const c=memberColor(m.id);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">${avatarHtml(m.id,22)}
+        <span style="font-size:12px;min-width:70px">${m.name}</span>
+        <div style="flex:1;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;"><div style="height:100%;border-radius:3px;background:${isOver?'#00E676':c.fg};width:${pct}%"></div></div>
+        <span style="font-size:11px;color:${isOver?'#00E676':'var(--text-dim)'};min-width:50px;text-align:right">${d.toFixed(1)}km${isOver?' 🔥':''}</span></div>`;
+    }).join('');
+    return `<div style="margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:700;color:var(--orange)">${wi+1}주차 · ${fmtLabel(w)}</span>
+        <span style="font-size:11px;color:var(--text-dim)">합계 ${wTotal.toFixed(1)}km</span>
+      </div>${rows}</div>`;
+  }).join('');
+}
+
+// ── TOTAL ──
+function renderTotal(){
+  const totalAll=logs.reduce((s,l)=>s+l.dist,0);
+  document.getElementById('total-grand').textContent=totalAll.toFixed(1);
+  document.getElementById('total-earth').textContent=((totalAll/40075)*100).toFixed(3);
+  document.getElementById('t-logs').textContent=logs.length;
+  document.getElementById('t-members').textContent=members.length;
+  if(logs.length){
+    const sorted=[...logs].sort((a,b)=>a.date.localeCompare(b.date));
+    const days=Math.ceil((new Date()-new Date(sorted[0].date))/(1000*60*60*24));
+    document.getElementById('t-days').textContent=days;
+    const best=sorted.reduce((b,l)=>l.dist>b.dist?l:b,sorted[0]);
+    document.getElementById('t-best').textContent=best.dist.toFixed(1);
+    document.getElementById('t-best-sub').textContent=`km · ${memberName(best.member)} · ${best.date}`;
+  }
+  const months=getAvailableMonths();
+  const maxD=Math.max(1,...members.map(m=>logs.filter(l=>l.member===m.id).reduce((s,l)=>s+l.dist,0)));
+  document.getElementById('total-member-cards').innerHTML=members.map((m,idx)=>{
+    const mLogs=logs.filter(l=>l.member===m.id);
+    const total=mLogs.reduce((s,l)=>s+l.dist,0);
+    const c=getColor(idx);
+    const monthRows=months.map(ym=>{
+      const d=mLogs.filter(l=>l.date.startsWith(ym)).reduce((s,l)=>s+l.dist,0);
+      return `<div class="mb-row"><span class="mb-label">${parseInt(ym.slice(5))}월</span>
+        <div class="mb-bar-wrap"><div class="mb-bar" style="width:${maxD?Math.round((d/maxD)*100):0}%;background:${c.fg}88"></div></div>
+        <span class="mb-val">${d.toFixed(1)}km</span></div>`;
+    }).join('');
+    return `<div class="total-member-card">
+      <div class="tmc-header"><div class="tmc-avatar" style="background:${c.bg};color:${c.fg}">${m.id}</div>
+        <div><div class="tmc-name">${m.name}</div><div style="font-size:11px;color:var(--text-dim)">${mLogs.length}회 인증</div></div></div>
+      <div class="tmc-total">${total.toFixed(1)}<span style="font-size:14px;font-weight:400;color:var(--text-dim)">km</span></div>
+      <div class="tmc-sub">누적 총 거리</div>
+      <div class="month-breakdown">${monthRows}</div></div>`;
+  }).join('');
+  const ctx=document.getElementById('totalTrendChart').getContext('2d');
+  if(charts.trend)charts.trend.destroy();
+  charts.trend=new Chart(ctx,{type:'bar',data:{labels:months.map(ym=>parseInt(ym.slice(5))+'월'),datasets:[{label:'크루 총 거리',data:months.map(ym=>logs.filter(l=>l.date.startsWith(ym)).reduce((s,l)=>s+l.dist,0).toFixed(1)),backgroundColor:'rgba(255,77,28,.3)',borderColor:'#FF4D1C',borderWidth:2,borderRadius:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1E1E1E',borderColor:'#333',borderWidth:1,callbacks:{label:c=>` ${c.raw}km`}}},
+    scales:{x:{grid:{display:false},ticks:{color:'#888'}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',callback:v=>v+'km'},beginAtZero:true}}}});
+}
+
+// ── MOTIVATION ──
+function renderMotivation(){
+  if(!badgeMemberId&&members.length)badgeMemberId=members[0].id;
+  if(!paceMemberId&&members.length)paceMemberId=members[0].id;
+  renderShareCard();
+  renderBadges();
+  renderStreaks();
+  renderShoeTracker();
+  renderPaceChart();
+}
+
+// SHARE CARD
+function renderShareCard(){
+  const mon=selectedWeek||curMonday();
+  const sun=getSunday(mon);
+  const start=fmt(mon),end=fmt(sun);
+  const totals={};members.forEach(m=>{totals[m.id]=getDistInRange(m.id,start,end);});
+  const sorted=[...members].sort((a,b)=>totals[b.id]-totals[a.id]);
+  const achieved=members.filter(m=>totals[m.id]>=GOAL).length;
+  const rows=sorted.slice(0,5).map((m,i)=>{
+    const medal=['🥇','🥈','🥉','4️⃣','5️⃣'][i];
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+      <span>${medal} ${m.name}</span><span style="color:${totals[m.id]>=GOAL?'#00E676':'#FF4D1C'};font-weight:700">${totals[m.id].toFixed(1)}km${totals[m.id]>=GOAL?' ✅':''}</span></div>`;
+  }).join('');
+  document.getElementById('share-preview').innerHTML=`
+    <div style="font-family:'Black Han Sans',sans-serif;font-size:20px;color:#FF4D1C;margin-bottom:4px">유지태 🏃</div>
+    <div style="font-size:12px;color:#888;margin-bottom:16px">${start} ~ ${end} 주간 결과</div>
+    ${rows}
+    <div style="margin-top:16px;font-size:12px;color:#888;">달성 ${achieved}/${members.length}명 · 목표 ${GOAL}km</div>`;
+}
+function copyShareText(){
+  const mon=selectedWeek||curMonday();const sun=getSunday(mon);
+  const start=fmt(mon),end=fmt(sun);
+  const totals={};members.forEach(m=>{totals[m.id]=getDistInRange(m.id,start,end);});
+  const sorted=[...members].sort((a,b)=>totals[b.id]-totals[a.id]);
+  const medals=['🥇','🥈','🥉'];
+  let txt=`🏃 유지태 주간 러닝 결과\n${start} ~ ${end}\n목표: ${GOAL}km\n${'─'.repeat(20)}\n`;
+  sorted.forEach((m,i)=>{txt+=(medals[i]||`${i+1}.`)+` ${m.name}: ${totals[m.id].toFixed(1)}km${totals[m.id]>=GOAL?' ✅':''}\n`;});
+  txt+=`${'─'.repeat(20)}\n달성 ${members.filter(m=>totals[m.id]>=GOAL).length}/${members.length}명`;
+  navigator.clipboard.writeText(txt).then(()=>toast('📋 클립보드에 복사됐어요!')).catch(()=>alert(txt));
+}
+function downloadShareCard(){toast('💡 브라우저 인쇄(Ctrl+P)로 저장하거나 스크린샷을 이용해주세요!');}
+
+// BADGES
+const BADGE_DEFS=[
+  {id:'first',icon:'🎽',name:'첫 인증',desc:'첫 번째 기록 완료',check:(logs)=>logs.length>=1},
+  {id:'week1',icon:'🔥',name:'첫 주 달성',desc:`주간 목표 첫 달성`,check:(logs)=>checkGoalOnce(logs)},
+  {id:'run10',icon:'🏅',name:'10km 돌파',desc:'누적 10km 이상',check:(logs)=>logs.reduce((s,l)=>s+l.dist,0)>=10},
+  {id:'run50',icon:'🥈',name:'50km 돌파',desc:'누적 50km 이상',check:(logs)=>logs.reduce((s,l)=>s+l.dist,0)>=50},
+  {id:'run100',icon:'🥇',name:'100km 돌파',desc:'누적 100km 이상',check:(logs)=>logs.reduce((s,l)=>s+l.dist,0)>=100},
+  {id:'run200',icon:'🏆',name:'200km 돌파',desc:'누적 200km 이상',check:(logs)=>logs.reduce((s,l)=>s+l.dist,0)>=200},
+  {id:'streak3',icon:'⚡',name:'3일 연속',desc:'3일 연속 인증',check:(logs)=>getMaxStreak(logs)>=3},
+  {id:'streak7',icon:'🌟',name:'7일 연속',desc:'7일 연속 인증',check:(logs)=>getMaxStreak(logs)>=7},
+  {id:'streak14',icon:'💎',name:'14일 연속',desc:'14일 연속 인증',check:(logs)=>getMaxStreak(logs)>=14},
+  {id:'rain',icon:'🌧️',name:'비 속의 러너',desc:'비 오는 날 인증',check:(logs)=>logs.some(l=>l.weather==='비')},
+  {id:'snow',icon:'❄️',name:'설원의 러너',desc:'눈 오는 날 인증',check:(logs)=>logs.some(l=>l.weather==='눈')},
+  {id:'long',icon:'🦵',name:'장거리 러너',desc:'10km 이상 단일 기록',check:(logs)=>logs.some(l=>l.dist>=10)},
+];
+function checkGoalOnce(mLogs){
+  const dates=[...new Set(mLogs.map(l=>getMonday(new Date(l.date)).toISOString()))];
+  return dates.some(mStr=>{
+    const mon=new Date(mStr),sun=getSunday(mon);
+    return mLogs.filter(l=>{const d=new Date(l.date);return d>=mon&&d<=sun;}).reduce((s,l)=>s+l.dist,0)>=GOAL;
+  });
+}
+function getMaxStreak(mLogs){
+  if(!mLogs.length)return 0;
+  const dates=[...new Set(mLogs.map(l=>l.date))].sort();
+  let max=1,cur=1;
+  for(let i=1;i<dates.length;i++){
+    const prev=new Date(dates[i-1]),cur2=new Date(dates[i]);
+    const diff=(cur2-prev)/(1000*60*60*24);
+    if(diff===1){cur++;max=Math.max(max,cur);}else cur=1;
+  }
+  return max;
+}
+function renderBadges(){
+  // member select
+  document.getElementById('badge-member-select').innerHTML=members.map(m=>{
+    const c=memberColor(m.id);
+    return `<div onclick="selectBadgeMember('${m.id}')" style="padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;border:1px solid ${m.id===badgeMemberId?c.fg:'var(--border)'};background:${m.id===badgeMemberId?c.bg:'var(--dark3)'};color:${m.id===badgeMemberId?c.fg:'var(--text-dim)'};font-weight:${m.id===badgeMemberId?700:400}">${m.name}</div>`;
+  }).join('');
+  const mLogs=logs.filter(l=>l.member===badgeMemberId);
+  document.getElementById('badge-section').innerHTML=BADGE_DEFS.map(b=>{
+    const earned=b.check(mLogs);
+    return `<div class="badge-card ${earned?'earned':''}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-info"><div class="badge-name">${b.name}</div><div class="badge-desc">${b.desc}</div></div>
+      ${earned?'<div style="position:absolute;top:8px;right:8px;font-size:10px;color:var(--gold)">획득</div>':''}
+    </div>`;
+  }).join('');
+}
+function selectBadgeMember(id){badgeMemberId=id;renderBadges();}
+
+// STREAK
+function renderStreaks(){
+  const today=new Date();
+  document.getElementById('streak-section').innerHTML=members.map(m=>{
+    const mLogs=logs.filter(l=>l.member===m.id);
+    const cur=getCurrentStreak(mLogs);
+    const max=getMaxStreak(mLogs);
+    // last 14 days dots
+    const dots=Array.from({length:14},(_,i)=>{
+      const d=new Date(today);d.setDate(d.getDate()-(13-i));
+      const ds=fmt(d);
+      const has=mLogs.some(l=>l.date===ds);
+      const isToday=ds===fmt(today);
+      return `<div class="streak-dot ${has?(isToday?'today':'active'):''}" title="${ds}"></div>`;
+    }).join('');
+    const c=memberColor(m.id);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      ${avatarHtml(m.id,30)}
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${m.name} <span style="color:${c.fg};font-size:11px;">현재 ${cur}일 연속</span> <span style="color:var(--text-dim);font-size:10px;">/ 최대 ${max}일</span></div>
+        <div class="streak-bar">${dots}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function getCurrentStreak(mLogs){
+  if(!mLogs.length)return 0;
+  const today=new Date();let streak=0;
+  for(let i=0;i<365;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    if(mLogs.some(l=>l.date===fmt(d)))streak++;
+    else break;
+  }
+  return streak;
+}
+
+// SHOE TRACKER
+function renderShoeTracker(){
+  const shoeMap={};
+  logs.forEach(l=>{
+    if(!l.shoe||l.shoe==='-')return;
+    shoeMap[l.shoe]=(shoeMap[l.shoe]||0)+l.dist;
+  });
+  const shoes=Object.entries(shoeMap).sort((a,b)=>b[1]-a[1]);
+  const maxKm=Math.max(500,...shoes.map(s=>s[1]));
+  document.getElementById('shoe-tracker').innerHTML=!shoes.length
+    ?'<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">신발 데이터가 없어요</div>'
+    :shoes.map(([shoe,km])=>{
+      const pct=Math.min((km/500)*100,100);
+      const warn=km>=450;const color=warn?'#FFB800':'#FF4D1C';
+      return `<div class="shoe-row">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${shoe}</div>
+          <div class="shoe-bar-wrap"><div class="shoe-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;margin-left:10px;">${km.toFixed(0)}km${warn?' ⚠️':''}</div>
+      </div>`;
+    }).join('');
+}
+
+// PACE CHART
+function renderPaceChart(){
+  document.getElementById('pace-member-select').innerHTML=members.map(m=>{
+    const c=memberColor(m.id);
+    return `<div onclick="selectPaceMember('${m.id}')" style="padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;border:1px solid ${m.id===paceMemberId?c.fg:'var(--border)'};background:${m.id===paceMemberId?c.bg:'var(--dark3)'};color:${m.id===paceMemberId?c.fg:'var(--text-dim)'};font-weight:${m.id===paceMemberId?700:400}">${m.name}</div>`;
+  }).join('');
+  const mLogs=logs.filter(l=>l.member===paceMemberId&&l.pace&&l.pace!=='-').sort((a,b)=>a.date.localeCompare(b.date));
+  function paceToSec(p){
+    const m=p.match(/(\d+)'(\d+)/);return m?parseInt(m[1])*60+parseInt(m[2]):null;
+  }
+  const valid=mLogs.map(l=>({date:l.date,sec:paceToSec(l.pace)})).filter(x=>x.sec);
+  const ctx=document.getElementById('paceChart').getContext('2d');
+  if(charts.pace)charts.pace.destroy();
+  if(!valid.length){ctx.clearRect(0,0,9999,9999);return;}
+  const c=memberColor(paceMemberId);
+  charts.pace=new Chart(ctx,{type:'line',
+    data:{labels:valid.map(x=>x.date.slice(5)),datasets:[{label:'페이스(초/km)',data:valid.map(x=>x.sec),borderColor:c.fg,backgroundColor:c.fg+'22',borderWidth:2,pointRadius:4,pointHoverRadius:6,tension:.3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1E1E1E',borderColor:'#333',borderWidth:1,callbacks:{label:ctx=>{const s=ctx.raw;return ` ${Math.floor(s/60)}'${String(s%60).padStart(2,'0')}"`;},title:t=>`날짜: ${t[0].label}`}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{size:10}}},
+        y:{reverse:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555',font:{size:10},callback:v=>{const min=Math.floor(v/60);const sec=Math.round(v%60);return `${min}'${String(sec).padStart(2,'0')}"`;},stepSize:30},beginAtZero:false}},
+      interaction:{mode:'index',intersect:false}}});
+}
+function selectPaceMember(id){paceMemberId=id;renderPaceChart();}
+
+// ── EXPORT CSV ──
+function exportCSV(){
+  if(!logs.length){toast('❌ 내보낼 기록이 없어요');return;}
+  const header='날짜,회원,거리(km),페이스,실내외,날씨,신발';
+  const rows=logs.map(l=>`${l.date},${memberName(l.member)},${l.dist},${l.pace},${l.type},${l.weather},${l.shoe}`);
+  const csv='\uFEFF'+[header,...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`유지태_러닝기록_${fmt(new Date())}.csv`;
+  a.click();
+  toast('📥 CSV 파일이 다운로드됐어요!');
+}
+
+// ── EDIT / DELETE ──
+let editingIdx=null;
+function openEditLog(idx){
+  editingIdx=idx;const l=logs[idx];
+  document.getElementById('e-date').value=l.date;
+  document.getElementById('e-member').innerHTML=members.map(m=>`<option value="${m.id}" ${m.id===l.member?'selected':''}>${m.name}</option>`).join('');
+  document.getElementById('e-dist').value=l.dist;
+  document.getElementById('e-pace').value=l.pace==='-'?'':l.pace;
+  document.getElementById('e-type').value=l.type;
+  document.getElementById('e-weather').value=l.weather;
+  document.getElementById('e-shoe').value=l.shoe==='-'?'':l.shoe;
+  document.getElementById('edit-modal').classList.add('show');
+}
+function closeEditLog(){document.getElementById('edit-modal').classList.remove('show');editingIdx=null;}
+function submitEdit(){
+  if(editingIdx===null)return;
+  const date=document.getElementById('e-date').value,member=document.getElementById('e-member').value;
+  const dist=parseFloat(document.getElementById('e-dist').value),pace=document.getElementById('e-pace').value;
+  const type=document.getElementById('e-type').value,weather=document.getElementById('e-weather').value,shoe=document.getElementById('e-shoe').value;
+  if(!date||!member||!dist){alert('날짜, 회원, 거리는 필수!');return;}
+  logs[editingIdx]={...logs[editingIdx],date,member,dist,pace:pace||'-',type,weather,shoe:shoe||'-'};
+  logs.sort((a,b)=>a.date.localeCompare(b.date));
+  closeEditLog();renderWeekly();toast('✅ 기록이 수정됐어요!');
+}
+function deleteLog(idx){
+  const l=logs[idx];
+  if(!confirm(`${memberName(l.member)} · ${l.date} · ${l.dist}km\n삭제할까요?`))return;
+  logs.splice(idx,1);renderWeekly();toast('🗑️ 삭제됐어요');
+}
+
+// ── ADD LOG ──
+function openAddLog(){
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-member').innerHTML='<option value="">선택</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('add-modal').classList.add('show');
+}
+function closeAddLog(){document.getElementById('add-modal').classList.remove('show');removePhoto();['f-member','f-dist','f-pace','f-shoe'].forEach(id=>document.getElementById(id).value='');}
+function submitLog(){
+  const date=document.getElementById('f-date').value,member=document.getElementById('f-member').value;
+  const dist=parseFloat(document.getElementById('f-dist').value),pace=document.getElementById('f-pace').value;
+  const type=document.getElementById('f-type').value,weather=document.getElementById('f-weather').value,shoe=document.getElementById('f-shoe').value;
+  const ps=document.getElementById('ph-preview').src;
+  const photo=(ps&&ps!==window.location.href)?ps:null;
+  if(!date||!member||!dist){alert('날짜, 회원, 거리는 필수!');return;}
+  logs.push({date,member,dist,pace:pace||'-',type,weather,shoe:shoe||'-',photo});
+  logs.sort((a,b)=>a.date.localeCompare(b.date));
+  closeAddLog();renderWeekly();toast('✅ 기록이 추가됐어요!');
+}
+function previewPhoto(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{document.getElementById('pph').style.display='none';const img=document.getElementById('ph-preview');img.src=ev.target.result;img.style.display='block';document.getElementById('ph-remove').style.display='flex';};
+  r.readAsDataURL(file);
+}
+function removePhoto(e){
+  if(e)e.stopPropagation();
+  document.getElementById('f-photo').value='';document.getElementById('ph-preview').src='';document.getElementById('ph-preview').style.display='none';
+  document.getElementById('ph-remove').style.display='none';document.getElementById('pph').style.display='block';
+}
+
+// ── LIGHTBOX ──
+function openLb(src,info){document.getElementById('lb-img').src=src;document.getElementById('lb-info').textContent=info;document.getElementById('lb').classList.add('show');}
+function closeLb(){document.getElementById('lb').classList.remove('show');}
+
+// ── SETTINGS ──
+let tempNewMembers=[];
+function openSettings(){document.getElementById('s-goal').value=GOAL;tempNewMembers=[];renderSettingsMemberList();document.getElementById('settings-modal').classList.add('show');}
+function closeSettings(){document.getElementById('settings-modal').classList.remove('show');}
+function renderSettingsMemberList(){
+  document.getElementById('s-members').innerHTML=members.map((m,i)=>{
+    const c=getColor(i);
+    return `<div class="smem-row"><div class="chip" style="background:${c.bg};color:${c.fg};width:28px;height:28px;border-radius:7px;">${m.id}</div>
+      <input type="text" class="finput" id="sm-${m.id}" value="${m.name}" placeholder="이름">
+      <button class="sdanger-btn" onclick="removeMemberFromSettings('${m.id}')">삭제</button></div>`;
+  }).join('')+tempNewMembers.map((_,i)=>`
+    <div class="smem-row"><div class="chip" style="background:${getColor(members.length+i).bg};color:${getColor(members.length+i).fg};width:28px;height:28px;border-radius:7px;">N</div>
+      <input type="text" class="finput" id="tnm-input-${i}" value="" placeholder="새 회원 이름">
+      <button class="sdanger-btn" onclick="removeNewMember(${i})">삭제</button></div>`).join('');
+}
+function removeMemberFromSettings(id){if(!confirm(`'${memberName(id)}' 삭제 시 기록도 삭제됩니다. 계속?`))return;members=members.filter(m=>m.id!==id);logs=logs.filter(l=>l.member!==id);renderSettingsMemberList();}
+function addMemberRow(){tempNewMembers.push('');renderSettingsMemberList();}
+function removeNewMember(i){tempNewMembers.splice(i,1);renderSettingsMemberList();}
+function saveSettings(){
+  const ng=parseFloat(document.getElementById('s-goal').value);if(ng&&ng>0)GOAL=ng;
+  members.forEach(m=>{const el=document.getElementById('sm-'+m.id);if(el&&el.value.trim())m.name=el.value.trim();});
+  tempNewMembers.forEach((_,i)=>{const el=document.getElementById('tnm-input-'+i);const name=el?el.value.trim():'';if(name){members.push({id:String(nextId),name});nextId++;}});
+  tempNewMembers=[];closeSettings();renderWeekly();toast('✅ 설정이 저장됐어요!');
+}
+
+// CLOSE ON BACKDROP
+['add-modal','edit-modal','settings-modal','expense-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});});
+
+// ── FINE SYSTEM ──
+let FINE_AMOUNT=5000;
+let finePayments=[];
+let expenses=[];
+let fineWeek=null;
+let fineWeekMonth=null;
+
+function saveFineAmount(){const v=parseInt(document.getElementById('fine-amount-input').value);if(v&&v>0){FINE_AMOUNT=v;toast(`✅ 벌금 ${v.toLocaleString()}원으로 저장!`);renderFine();}}
+
+function calcFineForWeek(start){
+  const mon=new Date(start),sun=getSunday(mon),end=fmt(sun);
+  return members.map(m=>{
+    const dist=getDistInRange(m.id,start,end);
+    const paid=finePayments.filter(p=>p.member===m.id&&p.weekStart===start).reduce((s,p)=>s+p.amount,0);
+    return{member:m.id,dist,owed:dist<GOAL?FINE_AMOUNT:0,paid,unpaid:dist<GOAL?Math.max(0,FINE_AMOUNT-paid):0,achieved:dist>=GOAL};
+  });
+}
+
+function markPaid(memberId,weekStart){
+  const existing=finePayments.filter(p=>p.member===memberId&&p.weekStart===weekStart).reduce((s,p)=>s+p.amount,0);
+  const remaining=Math.max(0,FINE_AMOUNT-existing);
+  if(remaining<=0){toast('이미 전액 납부됐어요!');return;}
+  finePayments.push({id:Date.now(),member:memberId,weekStart,amount:remaining,paidAt:fmt(new Date())});
+  toast(`✅ ${memberName(memberId)} 납부 완료!`);renderFine();
+}
+
+function openAddExpense(){document.getElementById('exp-date').value=fmt(new Date());document.getElementById('exp-title').value='';document.getElementById('exp-amount').value='';document.getElementById('expense-modal').classList.add('show');}
+function closeAddExpense(){document.getElementById('expense-modal').classList.remove('show');}
+function submitExpense(){
+  const date=document.getElementById('exp-date').value,title=document.getElementById('exp-title').value.trim();
+  const amount=parseInt(document.getElementById('exp-amount').value),category=document.getElementById('exp-category').value;
+  if(!date||!title||!amount){alert('날짜, 내용, 금액은 필수!');return;}
+  expenses.push({id:Date.now(),date,title,amount,category});
+  expenses.sort((a,b)=>b.date.localeCompare(a.date));
+  closeAddExpense();toast('💸 사용 내역 추가됐어요!');renderFine();
+}
+function deleteExpense(id){if(!confirm('삭제할까요?'))return;expenses=expenses.filter(e=>e.id!==id);renderFine();toast('🗑️ 삭제됐어요');}
+
+function getAllPastWeeks(){
+  if(!logs.length)return[fmt(curMonday())];
+  const first=logs.reduce((a,b)=>a.date<b.date?a:b).date;
+  const weeks=[];let mon=getMonday(new Date(first));const today=new Date();
+  while(mon<=today){weeks.push(fmt(mon));mon=new Date(mon);mon.setDate(mon.getDate()+7);}
+  return weeks;
+}
+
+function cancelPayment(id){
+  if(!confirm('이 납부 내역을 취소할까요?')) return;
+  finePayments = finePayments.filter(p => p.id !== id);
+  toast('↩️ 납부가 취소됐어요');
+  renderFine();
+}
+
+function renderFineKing(){
+  const stats = members.map(m => {
+    const totalPaid = finePayments.filter(p=>p.member===m.id).reduce((s,p)=>s+p.amount,0);
+    const allWeeks = getAllPastWeeks();
+    let totalFined = 0, missWeeks = 0;
+    allWeeks.forEach(wStart=>{
+      const sun=getSunday(new Date(wStart));
+      if(getDistInRange(m.id,wStart,fmt(sun))<GOAL){ totalFined+=FINE_AMOUNT; missWeeks++; }
+    });
+    return { ...m, missWeeks, totalFined, totalPaid, unpaid: Math.max(0,totalFined-totalPaid) };
+  }).filter(m=>m.totalPaid>0).sort((a,b)=>b.totalPaid-a.totalPaid);
+
+  const el=document.getElementById('fine-king-section');
+  if(!stats.length){el.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:8px">아직 납부 내역이 없어요 🎉</div>';return;}
+  const medals=['👑','🥈','🥉'];
+  const colors=['rgba(255,184,0,.15)','rgba(192,192,192,.1)','rgba(205,127,50,.1)'];
+  const borderColors=['rgba(255,184,0,.5)','rgba(192,192,192,.3)','rgba(205,127,50,.3)'];
+  const textColors=['#FFB800','#C0C0C0','#CD7F32'];
+  el.innerHTML=stats.slice(0,3).map((m,i)=>`
+    <div style="flex:1;min-width:180px;background:${colors[i]};border:1px solid ${borderColors[i]};border-radius:14px;padding:16px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px">${medals[i]}</div>
+      ${avatarHtml(m.id,42)}
+      <div style="font-size:15px;font-weight:700;margin:8px 0 4px">${m.name}</div>
+      <div style="font-size:22px;font-weight:700;color:${textColors[i]}">${m.totalPaid.toLocaleString()}원</div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:4px">납부 완료</div>
+      <div style="font-size:10px;margin-top:6px;">
+        <span style="color:var(--text-dim)">${m.missWeeks}주 미달성</span>
+        ${m.unpaid>0?`<span style="color:var(--orange);margin-left:6px">미납 ${m.unpaid.toLocaleString()}원</span>`:`<span style="color:var(--green);margin-left:6px">✅ 완납</span>`}
+      </div>
+    </div>`).join('');
+}
+
+function renderFine(){
+  if(!fineWeekMonth)fineWeekMonth=curYM();
+  if(!fineWeek)fineWeek=curMonday();
+  document.getElementById('fine-amount-input').value=FINE_AMOUNT;
+  const months=getAvailableMonths();
+  document.getElementById('fine-month-pick').innerHTML=months.map(ym=>
+    `<div class="wtab ${ym===fineWeekMonth?'active':''}" style="font-weight:700;" onclick="pickFineMonth('${ym}')">${parseInt(ym.slice(5))}월${ym===curYM()?' ★':''}</div>`).join('');
+  const weeks=getWeeksInMonth(fineWeekMonth);
+  const curMon=fmt(curMonday());
+  const activeMon=fineWeek?fmt(fineWeek):curMon;
+  document.getElementById('fine-week-tabs').innerHTML=weeks.map(w=>{
+    const wf=fmt(w);return`<div class="wtab ${wf===activeMon?'active':''}" onclick="pickFineWeek('${wf}')">${fmtLabel(w)}${wf===curMon?' 이번주':''}</div>`;
+  }).join('');
+  document.getElementById('fine-week-label').textContent=fmtLabel(fineWeek||curMonday());
+
+  // Fine king
+  renderFineKing();
+
+  // Hero totals
+  const totalPot=finePayments.reduce((s,p)=>s+p.amount,0);
+  const totalSpent=expenses.reduce((s,e)=>s+e.amount,0);
+  const balance=totalPot-totalSpent;
+  const allWeeks=getAllPastWeeks();
+  let totalOwed=0;
+  members.forEach(m=>allWeeks.forEach(wStart=>{
+    const mon=new Date(wStart),sun=getSunday(mon);
+    if(getDistInRange(m.id,wStart,fmt(sun))<GOAL)totalOwed+=FINE_AMOUNT;
+  }));
+  document.getElementById('f-total-pot').textContent=totalPot.toLocaleString()+'원';
+  document.getElementById('f-total-spent').textContent=totalSpent.toLocaleString()+'원';
+  document.getElementById('f-balance').textContent=balance.toLocaleString()+'원';
+  document.getElementById('f-unpaid').textContent=Math.max(0,totalOwed-totalPot).toLocaleString()+'원';
+
+  // Member cards
+  const start=fmt(fineWeek||curMonday());
+  const fines=calcFineForWeek(start);
+  const grid=document.getElementById('fine-member-grid');
+  grid.innerHTML=fines.map(f=>{
+    if(f.achieved){return`<div class="fine-member-card paid-all">${avatarHtml(f.member,40)}<div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div><div class="fmc-detail">목표 달성 ✅ — 벌금 없음</div><div class="fmc-detail">달성 ${f.dist.toFixed(1)}km</div></div><div class="fmc-amount"><div class="fmc-owed" style="color:var(--green);font-size:20px;">🎉</div></div></div>`;}
+    const isPaid=f.unpaid<=0;
+    return`<div class="fine-member-card ${isPaid?'paid-all':'has-fine'}">${avatarHtml(f.member,40)}
+      <div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div>
+      <div class="fmc-detail">달성 ${f.dist.toFixed(1)}km / 목표 ${GOAL}km</div>
+      <div class="fmc-detail">납부 ${f.paid.toLocaleString()}원 / 벌금 ${f.owed.toLocaleString()}원</div></div>
+      <div class="fmc-amount"><div class="fmc-owed" style="color:${isPaid?'var(--green)':'var(--orange)'};">${isPaid?'✅ 완납':'⚠️ '+f.unpaid.toLocaleString()+'원'}</div>
+      ${!isPaid?`<button class="paid-btn" style="margin-top:6px;" onclick="markPaid('${f.member}','${start}')">납부처리</button>`:''}</div></div>`;
+  }).join('');
+
+  // Payment history (with cancel)
+  const payList=document.getElementById('payment-list');
+  const allPayments=[...finePayments].sort((a,b)=>b.paidAt.localeCompare(a.paidAt));
+  payList.innerHTML=!allPayments.length?'<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">납부 내역이 없어요</div>'
+    :allPayments.map(p=>`<div class="expense-item">
+      <div class="exp-icon">💵</div>
+      <div class="exp-info"><div class="exp-title">${memberName(p.member)} 벌금 납부</div><div class="exp-date">${p.paidAt} · ${p.weekStart} 주차</div></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="exp-amount" style="color:var(--green);">+${p.amount.toLocaleString()}원</div>
+        <button class="exp-del" onclick="cancelPayment(${p.id})" title="납부 취소">↩️</button>
+      </div>
+    </div>`).join('');
+
+  // Expense list
+  const catIcon={상금:'🏆',회식:'🍖',용품:'👟',기타:'📦'};
+  const expList=document.getElementById('expense-list');
+  expList.innerHTML=!expenses.length?'<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">사용 내역이 없어요</div>'
+    :expenses.map(e=>`<div class="expense-item"><div class="exp-icon">${catIcon[e.category]||'📦'}</div><div class="exp-info"><div class="exp-title">${e.title}</div><div class="exp-date">${e.date} · ${e.category}</div></div><div style="display:flex;align-items:center;gap:6px;"><div class="exp-amount">-${e.amount.toLocaleString()}원</div><button class="exp-del" onclick="deleteExpense(${e.id})">✕</button></div></div>`).join('');
+}
+
+function pickFineMonth(ym){fineWeekMonth=ym;fineWeek=null;renderFine();}
+function pickFineWeek(ms){fineWeek=new Date(ms);renderFine();}
+
+function checkStorage(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw){ alert('❌ 저장된 데이터가 없어요.\n아직 아무것도 입력하지 않았거나\n이 브라우저에 데이터가 없는 상태예요.'); return; }
+    const d = JSON.parse(raw);
+    const size = (new Blob([raw]).size / 1024).toFixed(1);
+    alert(
+      `✅ 로컬 저장 정상 작동 중!\n\n` +
+      `📋 기록 수: ${(d.logs||[]).length}개\n` +
+      `👥 회원 수: ${(d.members||[]).length}명\n` +
+      `💸 납부 내역: ${(d.finePayments||[]).length}건\n` +
+      `📦 사용 내역: ${(d.expenses||[]).length}건\n` +
+      `🎯 주간 목표: ${d.GOAL||10}km\n\n` +
+      `💾 저장 용량: ${size}KB\n\n` +
+      `이 브라우저에서 파일을 닫았다 열어도\n데이터가 그대로 유지돼요 😄`
+    );
+  } catch(e){
+    alert('⚠️ 저장 확인 중 오류가 발생했어요: '+e.message);
+  }
+}
+
+function updateStorageBtn(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    const btn = document.getElementById('storage-btn');
+    if(!btn) return;
+    if(raw){
+      const d = JSON.parse(raw);
+      btn.textContent = `💾 저장됨 (${(d.logs||[]).length}건)`;
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'rgba(0,230,118,.3)';
+    } else {
+      btn.textContent = '💾 저장 없음';
+      btn.style.color = 'var(--text-dim)';
+    }
+  } catch(e){}
+}
+
+// saveData에 버튼 업데이트 추가
+const _origSaveData = saveData;
+saveData = function(){
+  _origSaveData();
+  updateStorageBtn();
+  // 저장됨 표시 잠깐 보여주기
+  const btn = document.getElementById('storage-btn');
+  if(btn){ btn.textContent = '✅ 저장됨!'; setTimeout(()=>updateStorageBtn(), 1500); }
+};
+
+// ── LOCAL STORAGE ──
+const LS_KEY = 'yujitae_v1';
+
+function saveData(){
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      GOAL, members, nextId, logs, finePayments, expenses, FINE_AMOUNT
+    }));
+  } catch(e){ console.warn('저장 실패:', e); }
+}
+
+function loadData(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    if(d.GOAL) GOAL = d.GOAL;
+    if(d.members) members = d.members;
+    if(d.nextId) nextId = d.nextId;
+    if(d.logs) logs = d.logs;
+    if(d.finePayments) finePayments = d.finePayments;
+    if(d.expenses) expenses = d.expenses;
+    if(d.FINE_AMOUNT) FINE_AMOUNT = d.FINE_AMOUNT;
+  } catch(e){ console.warn('불러오기 실패:', e); }
+}
+
+// 데이터 변경되는 모든 함수에 saveData() 자동 연결
+const _origSubmitLog = submitLog;
+submitLog = function(){ _origSubmitLog(); saveData(); };
+
+const _origSubmitEdit = submitEdit;
+submitEdit = function(){ _origSubmitEdit(); saveData(); };
+
+const _origDeleteLog = deleteLog;
+deleteLog = function(idx){ _origDeleteLog(idx); saveData(); };
+
+const _origSaveSettings = saveSettings;
+saveSettings = function(){ _origSaveSettings(); saveData(); };
+
+const _origMarkPaid = markPaid;
+markPaid = function(m,w){ _origMarkPaid(m,w); saveData(); };
+
+const _origCancelPayment = cancelPayment;
+cancelPayment = function(id){ _origCancelPayment(id); saveData(); };
+
+const _origSubmitExpense = submitExpense;
+submitExpense = function(){ _origSubmitExpense(); saveData(); };
+
+const _origDeleteExpense = deleteExpense;
+deleteExpense = function(id){ _origDeleteExpense(id); saveData(); };
+
+const _origSaveFineAmount = saveFineAmount;
+saveFineAmount = function(){ _origSaveFineAmount(); saveData(); };
+
+// INIT
+loadData();
+updateStorageBtn();
+renderWeekly();
+</script>
+</body>
+</html>
