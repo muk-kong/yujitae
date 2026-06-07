@@ -1282,28 +1282,89 @@ saveData = function(){
 
 // ── LOCAL STORAGE ──
 const LS_KEY = 'yujitae_v1';
+const GS_URL = 'https://script.google.com/macros/s/AKfycbyfEx7y-qTB5dRnsKI3FhWPc5eWCjXxPN4s4LdkA_ukU9lnfiMkax4NW0uZuMjsgoJR/exec';
 
-function saveData(){
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      GOAL, members, nextId, logs, finePayments, expenses, FINE_AMOUNT
-    }));
-  } catch(e){ console.warn('저장 실패:', e); }
+// ── 로컬 저장 (빠른 캐시용) ──
+function saveLocal(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT})); } catch(e){}
 }
-
-function loadData(){
+function loadLocal(){
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if(!raw) return;
+    if(!raw) return false;
     const d = JSON.parse(raw);
-    if(d.GOAL) GOAL = d.GOAL;
-    if(d.members) members = d.members;
-    if(d.nextId) nextId = d.nextId;
-    if(d.logs) logs = d.logs;
-    if(d.finePayments) finePayments = d.finePayments;
-    if(d.expenses) expenses = d.expenses;
-    if(d.FINE_AMOUNT) FINE_AMOUNT = d.FINE_AMOUNT;
-  } catch(e){ console.warn('불러오기 실패:', e); }
+    if(d.GOAL) GOAL=d.GOAL;
+    if(d.members) members=d.members;
+    if(d.nextId) nextId=d.nextId;
+    if(d.logs) logs=d.logs;
+    if(d.finePayments) finePayments=d.finePayments;
+    if(d.expenses) expenses=d.expenses;
+    if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+    return true;
+  } catch(e){ return false; }
+}
+
+// ── Google Sheets 저장 ──
+async function saveToSheets(){
+  try {
+    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT};
+    await fetch(GS_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({sheet:'data', rows:[[JSON.stringify(payload)]]})
+    });
+  } catch(e){ console.warn('시트 저장 실패:', e); }
+}
+
+// ── Google Sheets 불러오기 ──
+async function loadFromSheets(){
+  try {
+    showSyncStatus('🔄 데이터 불러오는 중...');
+    const res = await fetch(`${GS_URL}?sheet=data`, {mode:'cors'});
+    const json = await res.json();
+    if(json.ok && json.data && json.data[0] && json.data[0][0]){
+      const d = JSON.parse(json.data[0][0]);
+      if(d.GOAL) GOAL=d.GOAL;
+      if(d.members) members=d.members;
+      if(d.nextId) nextId=d.nextId;
+      if(d.logs) logs=d.logs;
+      if(d.finePayments) finePayments=d.finePayments;
+      if(d.expenses) expenses=d.expenses;
+      if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+      saveLocal(); // 로컬에도 캐시
+      showSyncStatus('✅ 동기화 완료!', 2000);
+      return true;
+    }
+    showSyncStatus('📭 저장된 데이터 없음', 2000);
+    return false;
+  } catch(e){
+    showSyncStatus('⚠️ 오프라인 — 로컬 데이터 사용', 3000);
+    return false;
+  }
+}
+
+function showSyncStatus(msg, hideAfter=0){
+  const btn = document.getElementById('storage-btn');
+  if(btn) btn.textContent = msg;
+  if(hideAfter) setTimeout(updateStorageBtn, hideAfter);
+}
+
+// ── 통합 save/load ──
+function saveData(){
+  saveLocal();
+  saveToSheets();
+  updateStorageBtn();
+  const btn = document.getElementById('storage-btn');
+  if(btn){ btn.textContent='✅ 저장됨!'; setTimeout(updateStorageBtn,1500); }
+}
+
+async function loadData(){
+  // 로컬 먼저 (빠르게 화면 표시)
+  loadLocal();
+  renderWeekly();
+  // 구글 시트에서 최신 데이터 가져오기
+  const ok = await loadFromSheets();
+  if(ok){ renderWeekly(); updateStorageBtn(); }
 }
 
 // 데이터 변경되는 모든 함수에 saveData() 자동 연결
@@ -1335,9 +1396,8 @@ const _origSaveFineAmount = saveFineAmount;
 saveFineAmount = function(){ _origSaveFineAmount(); saveData(); };
 
 // INIT
-loadData();
 updateStorageBtn();
-renderWeekly();
+loadData();
 </script>
 </body>
 </html>
