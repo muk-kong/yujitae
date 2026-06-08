@@ -1069,77 +1069,102 @@ let tempNewMembers=[];
 function openSettings(){document.getElementById('s-goal').value=GOAL;tempNewMembers=[];renderSettingsMemberList();document.getElementById('settings-modal').classList.add('show');}
 function closeSettings(){document.getElementById('settings-modal').classList.remove('show');}
 function renderSettingsMemberList(){
-  document.getElementById('s-members').innerHTML=members.map((m,i)=>{
-    const c=getColor(i);
-    const display=getInitial(m);
-    const mode=m.emoji?'emoji':m.initial?'initial':'auto';
-    return `<div style="padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;">
+  const container = document.getElementById('s-members');
+  container.innerHTML = '';
+
+  members.forEach((m,i)=>{
+    const c = getColor(i);
+    const display = getInitial(m);
+    const mode = m.emoji ? 'emoji' : m.initial ? 'initial' : 'auto';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;';
+    wrap.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:36px;height:36px;border-radius:9px;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:${m.emoji?'20':'14'}px;flex-shrink:0;">${display}</div>
+        <div id="avatar-prev-${m.id}" style="width:36px;height:36px;border-radius:9px;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:${m.emoji?'20':'14'}px;flex-shrink:0;">${display}</div>
         <input type="text" class="finput" id="sm-${m.id}" value="${m.name}" placeholder="이름" style="flex:1;">
-        <button class="sdanger-btn" onclick="removeMemberFromSettings('${m.id}')">삭제</button>
+        <button class="sdanger-btn" data-del="${m.id}">삭제</button>
       </div>
       <div style="padding-left:44px;">
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <button onclick="setProfileMode('${m.id}','auto')" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='auto'?'var(--orange)':'var(--border)'};background:${mode==='auto'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='auto'?'var(--orange)':'var(--text-dim)'};">자동</button>
-          <button onclick="setProfileMode('${m.id}','initial')" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='initial'?'var(--orange)':'var(--border)'};background:${mode==='initial'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='initial'?'var(--orange)':'var(--text-dim)'};">이니셜</button>
-          <button onclick="setProfileMode('${m.id}','emoji')" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='emoji'?'var(--orange)':'var(--border)'};background:${mode==='emoji'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='emoji'?'var(--orange)':'var(--text-dim)'};">이모지</button>
+          <button data-mode="auto" data-mid="${m.id}" class="profile-mode-btn" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='auto'?'var(--orange)':'var(--border)'};background:${mode==='auto'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='auto'?'var(--orange)':'var(--text-dim)'};">자동</button>
+          <button data-mode="initial" data-mid="${m.id}" class="profile-mode-btn" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='initial'?'var(--orange)':'var(--border)'};background:${mode==='initial'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='initial'?'var(--orange)':'var(--text-dim)'};">이니셜</button>
+          <button data-mode="emoji" data-mid="${m.id}" class="profile-mode-btn" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='emoji'?'var(--orange)':'var(--border)'};background:${mode==='emoji'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='emoji'?'var(--orange)':'var(--text-dim)'};">이모지</button>
         </div>
         <div id="profile-input-${m.id}">
           ${mode==='initial'?`<input type="text" class="finput" id="sm-initial-${m.id}" value="${m.initial||''}" placeholder="홍, KD 등" maxlength="3">`:''}
           ${mode==='emoji'?`<input type="text" class="finput" id="sm-emoji-${m.id}" value="${m.emoji||''}" placeholder="🏃 🔥 💪" style="font-size:20px;text-align:center;" maxlength="2">`:''}
           ${mode==='auto'?`<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용 (${getInitial(m)})</div>`:''}
         </div>
-      </div>
-    </div>`;
-  }).join('')+tempNewMembers.map((_,i)=>`
-    <div style="padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;">
+      </div>`;
+    container.appendChild(wrap);
+  });
+
+  // 새 회원
+  tempNewMembers.forEach((_,i)=>{
+    const c = getColor(members.length+i);
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;';
+    wrap.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:36px;height:36px;border-radius:9px;background:${getColor(members.length+i).bg};color:${getColor(members.length+i).fg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">N</div>
+        <div style="width:36px;height:36px;border-radius:9px;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">N</div>
         <input type="text" class="finput" id="tnm-input-${i}" placeholder="새 회원 이름" style="flex:1;">
-        <button class="sdanger-btn" onclick="removeNewMember(${i})">삭제</button>
+        <button class="sdanger-btn" data-del-new="${i}">삭제</button>
       </div>
       <div style="padding-left:44px;">
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <button onclick="setNewProfileMode(${i},'auto')" id="tnm-btn-auto-${i}" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--orange);background:rgba(255,77,28,.15);color:var(--orange);">자동</button>
-          <button onclick="setNewProfileMode(${i},'initial')" id="tnm-btn-initial-${i}" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);background:var(--dark3);color:var(--text-dim);">이니셜</button>
-          <button onclick="setNewProfileMode(${i},'emoji')" id="tnm-btn-emoji-${i}" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);background:var(--dark3);color:var(--text-dim);">이모지</button>
+          <button data-mode="auto" data-new="${i}" class="new-mode-btn" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--orange);background:rgba(255,77,28,.15);color:var(--orange);">자동</button>
+          <button data-mode="initial" data-new="${i}" class="new-mode-btn" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);background:var(--dark3);color:var(--text-dim);">이니셜</button>
+          <button data-mode="emoji" data-new="${i}" class="new-mode-btn" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);background:var(--dark3);color:var(--text-dim);">이모지</button>
         </div>
         <div id="tnm-profile-input-${i}"><div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용</div></div>
-      </div>
-    </div>`).join('');
-}
-
-function setProfileMode(memberId, mode){
-  const m = members.find(x=>x.id===memberId);
-  if(!m) return;
-  // 현재 입력값 먼저 저장
-  const nameEl=document.getElementById('sm-'+memberId);
-  if(nameEl&&nameEl.value.trim()) m.name=nameEl.value.trim();
-  const emojiEl=document.getElementById('sm-emoji-'+memberId);
-  if(emojiEl) m.emoji=emojiEl.value.trim();
-  const initEl=document.getElementById('sm-initial-'+memberId);
-  if(initEl) m.initial=initEl.value.trim();
-  // 모드 변경
-  if(mode==='auto'){ m.emoji=''; m.initial=''; }
-  else if(mode==='initial'){ m.emoji=''; }
-  else if(mode==='emoji'){ m.initial=''; }
-  renderSettingsMemberList();
-}
-
-function setNewProfileMode(i, mode){
-  const inputEl = document.getElementById(`tnm-profile-input-${i}`);
-  ['auto','initial','emoji'].forEach(m=>{
-    const btn=document.getElementById(`tnm-btn-${m}-${i}`);
-    if(btn){
-      btn.style.borderColor=m===mode?'var(--orange)':'var(--border)';
-      btn.style.background=m===mode?'rgba(255,77,28,.15)':'var(--dark3)';
-      btn.style.color=m===mode?'var(--orange)':'var(--text-dim)';
-    }
+      </div>`;
+    container.appendChild(wrap);
   });
-  if(mode==='auto') inputEl.innerHTML=`<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용</div>`;
-  else if(mode==='initial') inputEl.innerHTML=`<input type="text" class="finput" id="tnm-initial-${i}" placeholder="홍, KD 등" maxlength="3">`;
-  else if(mode==='emoji') inputEl.innerHTML=`<input type="text" class="finput" id="tnm-emoji-${i}" placeholder="🏃 🔥 💪" style="font-size:20px;text-align:center;" maxlength="2">`;
+
+  // 이벤트 위임
+  container.onclick = function(e){
+    const btn = e.target.closest('button');
+    if(!btn) return;
+
+    // 기존 회원 모드 변경
+    if(btn.classList.contains('profile-mode-btn')){
+      const mid = btn.dataset.mid;
+      const mode = btn.dataset.mode;
+      const m = members.find(x=>x.id===mid);
+      if(!m) return;
+      // 현재 입력값 저장
+      const nameEl=document.getElementById('sm-'+mid); if(nameEl&&nameEl.value.trim()) m.name=nameEl.value.trim();
+      const emojiEl=document.getElementById('sm-emoji-'+mid); if(emojiEl) m.emoji=emojiEl.value.trim();
+      const initEl=document.getElementById('sm-initial-'+mid); if(initEl) m.initial=initEl.value.trim();
+      // 모드 적용
+      if(mode==='auto'){m.emoji='';m.initial='';}
+      else if(mode==='initial'){m.emoji='';}
+      else if(mode==='emoji'){m.initial='';}
+      renderSettingsMemberList(); return;
+    }
+
+    // 새 회원 모드 변경
+    if(btn.classList.contains('new-mode-btn')){
+      const i = parseInt(btn.dataset.new);
+      const mode = btn.dataset.mode;
+      const inputArea = document.getElementById('tnm-profile-input-'+i);
+      // 버튼 스타일 업데이트
+      btn.closest('div').querySelectorAll('.new-mode-btn').forEach(b=>{
+        const active = b.dataset.mode===mode;
+        b.style.borderColor = active?'var(--orange)':'var(--border)';
+        b.style.background = active?'rgba(255,77,28,.15)':'var(--dark3)';
+        b.style.color = active?'var(--orange)':'var(--text-dim)';
+      });
+      if(mode==='auto') inputArea.innerHTML=`<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용</div>`;
+      else if(mode==='initial') inputArea.innerHTML=`<input type="text" class="finput" id="tnm-initial-${i}" placeholder="홍, KD 등" maxlength="3">`;
+      else if(mode==='emoji') inputArea.innerHTML=`<input type="text" class="finput" id="tnm-emoji-${i}" placeholder="🏃 🔥 💪" style="font-size:20px;text-align:center;" maxlength="2">`;
+      return;
+    }
+
+    // 삭제
+    if(btn.dataset.del) removeMemberFromSettings(btn.dataset.del);
+    if(btn.dataset.delNew !== undefined) removeNewMember(parseInt(btn.dataset.delNew));
+  };
 }
 function removeMemberFromSettings(id){if(!confirm(`'${memberName(id)}' 삭제 시 기록도 삭제됩니다. 계속?`))return;members=members.filter(m=>m.id!==id);logs=logs.filter(l=>l.member!==id);renderSettingsMemberList();}
 function addMemberRow(){tempNewMembers.push('');renderSettingsMemberList();}
