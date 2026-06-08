@@ -1072,41 +1072,66 @@ function renderSettingsMemberList(){
   document.getElementById('s-members').innerHTML=members.map((m,i)=>{
     const c=getColor(i);
     const display=getInitial(m);
-    return `<div class="smem-row" style="align-items:flex-start;flex-wrap:wrap;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px;">
-      <div style="display:flex;align-items:center;gap:6px;width:100%;">
-        <div style="width:32px;height:32px;border-radius:8px;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${display}</div>
+    const mode=m.emoji?'emoji':m.initial?'initial':'auto';
+    return `<div style="padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="width:36px;height:36px;border-radius:9px;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:${m.emoji?'20':'14'}px;flex-shrink:0;">${display}</div>
         <input type="text" class="finput" id="sm-${m.id}" value="${m.name}" placeholder="이름" style="flex:1;">
         <button class="sdanger-btn" onclick="removeMemberFromSettings('${m.id}')">삭제</button>
       </div>
-      <div style="display:flex;gap:6px;width:100%;padding-left:38px;">
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">이모지 (예: 🏃 🔥 💪)</div>
-          <input type="text" class="finput" id="sm-emoji-${m.id}" value="${m.emoji||''}" placeholder="🏃" style="font-size:18px;text-align:center;" maxlength="2">
+      <div style="padding-left:44px;">
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button onclick="setProfileMode('${m.id}','auto')" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='auto'?'var(--orange)':'var(--border)'};background:${mode==='auto'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='auto'?'var(--orange)':'var(--text-dim)'};">자동</button>
+          <button onclick="setProfileMode('${m.id}','initial')" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='initial'?'var(--orange)':'var(--border)'};background:${mode==='initial'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='initial'?'var(--orange)':'var(--text-dim)'};">이니셜</button>
+          <button onclick="setProfileMode('${m.id}','emoji')" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mode==='emoji'?'var(--orange)':'var(--border)'};background:${mode==='emoji'?'rgba(255,77,28,.15)':'var(--dark3)'};color:${mode==='emoji'?'var(--orange)':'var(--text-dim)'};">이모지</button>
         </div>
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">이니셜 (예: 홍, KD)</div>
-          <input type="text" class="finput" id="sm-initial-${m.id}" value="${m.initial||''}" placeholder="홍" maxlength="3">
+        <div id="profile-input-${m.id}">
+          ${mode==='initial'?`<input type="text" class="finput" id="sm-initial-${m.id}" value="${m.initial||''}" placeholder="홍, KD 등" maxlength="3">`:''}
+          ${mode==='emoji'?`<input type="text" class="finput" id="sm-emoji-${m.id}" value="${m.emoji||''}" placeholder="🏃 🔥 💪" style="font-size:20px;text-align:center;" maxlength="2">`:''}
+          ${mode==='auto'?`<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용 (${getInitial(m)})</div>`:''}
         </div>
       </div>
     </div>`;
   }).join('')+tempNewMembers.map((_,i)=>`
-    <div class="smem-row" style="align-items:flex-start;flex-wrap:wrap;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px;">
-      <div style="display:flex;align-items:center;gap:6px;width:100%;">
-        <div style="width:32px;height:32px;border-radius:8px;background:${getColor(members.length+i).bg};color:${getColor(members.length+i).fg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">N</div>
-        <input type="text" class="finput" id="tnm-input-${i}" value="" placeholder="새 회원 이름" style="flex:1;">
+    <div style="padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="width:36px;height:36px;border-radius:9px;background:${getColor(members.length+i).bg};color:${getColor(members.length+i).fg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">N</div>
+        <input type="text" class="finput" id="tnm-input-${i}" placeholder="새 회원 이름" style="flex:1;">
         <button class="sdanger-btn" onclick="removeNewMember(${i})">삭제</button>
       </div>
-      <div style="display:flex;gap:6px;width:100%;padding-left:38px;">
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">이모지</div>
-          <input type="text" class="finput" id="tnm-emoji-${i}" placeholder="🏃" style="font-size:18px;text-align:center;" maxlength="2">
+      <div style="padding-left:44px;">
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button onclick="setNewProfileMode(${i},'auto')" id="tnm-btn-auto-${i}" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--orange);background:rgba(255,77,28,.15);color:var(--orange);">자동</button>
+          <button onclick="setNewProfileMode(${i},'initial')" id="tnm-btn-initial-${i}" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);background:var(--dark3);color:var(--text-dim);">이니셜</button>
+          <button onclick="setNewProfileMode(${i},'emoji')" id="tnm-btn-emoji-${i}" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid var(--border);background:var(--dark3);color:var(--text-dim);">이모지</button>
         </div>
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">이니셜</div>
-          <input type="text" class="finput" id="tnm-initial-${i}" placeholder="홍" maxlength="3">
-        </div>
+        <div id="tnm-profile-input-${i}"><div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용</div></div>
       </div>
     </div>`).join('');
+}
+
+function setProfileMode(memberId, mode){
+  const m = members.find(x=>x.id===memberId);
+  if(!m) return;
+  if(mode==='auto'){ m.emoji=''; m.initial=''; }
+  else if(mode==='initial'){ m.emoji=''; }
+  else if(mode==='emoji'){ m.initial=''; }
+  renderSettingsMemberList();
+}
+
+function setNewProfileMode(i, mode){
+  const inputEl = document.getElementById(`tnm-profile-input-${i}`);
+  ['auto','initial','emoji'].forEach(m=>{
+    const btn=document.getElementById(`tnm-btn-${m}-${i}`);
+    if(btn){
+      btn.style.borderColor=m===mode?'var(--orange)':'var(--border)';
+      btn.style.background=m===mode?'rgba(255,77,28,.15)':'var(--dark3)';
+      btn.style.color=m===mode?'var(--orange)':'var(--text-dim)';
+    }
+  });
+  if(mode==='auto') inputEl.innerHTML=`<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">이름 첫 글자 자동 사용</div>`;
+  else if(mode==='initial') inputEl.innerHTML=`<input type="text" class="finput" id="tnm-initial-${i}" placeholder="홍, KD 등" maxlength="3">`;
+  else if(mode==='emoji') inputEl.innerHTML=`<input type="text" class="finput" id="tnm-emoji-${i}" placeholder="🏃 🔥 💪" style="font-size:20px;text-align:center;" maxlength="2">`;
 }
 function removeMemberFromSettings(id){if(!confirm(`'${memberName(id)}' 삭제 시 기록도 삭제됩니다. 계속?`))return;members=members.filter(m=>m.id!==id);logs=logs.filter(l=>l.member!==id);renderSettingsMemberList();}
 function addMemberRow(){tempNewMembers.push('');renderSettingsMemberList();}
