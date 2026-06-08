@@ -1478,13 +1478,23 @@ function loadLocal(){
 async function saveToSheets(){
   try {
     const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT};
-    const body = JSON.stringify({sheet:'data', rows:[[JSON.stringify(payload)]]});
-    // Apps Script는 no-cors POST로 받음 (응답은 못 읽지만 저장은 됨)
-    fetch(GS_URL, {
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain'}, // no-cors에서는 text/plain만 허용
-      body: body
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    const cbName = 'gsSaveCallback_' + Date.now();
+    return new Promise((resolve)=>{
+      const script = document.createElement('script');
+      const timeout = setTimeout(()=>{
+        delete window[cbName];
+        try{ document.body.removeChild(script); }catch(e){}
+        resolve(false);
+      }, 8000);
+      window[cbName] = function(res){
+        clearTimeout(timeout);
+        delete window[cbName];
+        try{ document.body.removeChild(script); }catch(e){}
+        resolve(res && res.ok);
+      };
+      script.src = `${GS_URL}?action=save&data=${encoded}&callback=${cbName}`;
+      document.body.appendChild(script);
     });
   } catch(e){ console.warn('시트 저장 실패:', e); }
 }
