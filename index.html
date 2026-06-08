@@ -1113,6 +1113,14 @@ function renderSettingsMemberList(){
 function setProfileMode(memberId, mode){
   const m = members.find(x=>x.id===memberId);
   if(!m) return;
+  // 현재 입력값 먼저 저장
+  const nameEl=document.getElementById('sm-'+memberId);
+  if(nameEl&&nameEl.value.trim()) m.name=nameEl.value.trim();
+  const emojiEl=document.getElementById('sm-emoji-'+memberId);
+  if(emojiEl) m.emoji=emojiEl.value.trim();
+  const initEl=document.getElementById('sm-initial-'+memberId);
+  if(initEl) m.initial=initEl.value.trim();
+  // 모드 변경
   if(mode==='auto'){ m.emoji=''; m.initial=''; }
   else if(mode==='initial'){ m.emoji=''; }
   else if(mode==='emoji'){ m.initial=''; }
