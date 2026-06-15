@@ -1453,26 +1453,44 @@ async function saveToSheets(){
 
 async function loadFromSheets(){
   try {
-    showSyncStatus('🔄 데이터 불러오는 중...');
+    showSyncStatus('🔄 동기화 중...');
     const res = await fetch(`${GS_URL}?sheet=data`);
     const json = await res.json();
     if(json.ok && json.data && json.data[0] && json.data[0][0] && json.data[0][0]!==''){
       const d = JSON.parse(json.data[0][0]);
-      if(d.GOAL) GOAL=d.GOAL;
-      if(d.members) members=d.members;
-      if(d.nextId) nextId=d.nextId;
-      if(d.logs) logs=d.logs;
-      if(d.finePayments) finePayments=d.finePayments;
-      if(d.expenses) expenses=d.expenses;
-      if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
-      saveLocal();
-      showSyncStatus('✅ 동기화 완료!', 2000);
+      // 시트 데이터가 로컬보다 기록이 많으면 시트 우선
+      const sheetLogCount = (d.logs||[]).length;
+      const localLogCount = logs.length;
+      if(sheetLogCount >= localLogCount){
+        if(d.GOAL) GOAL=d.GOAL;
+        if(d.members) members=d.members;
+        if(d.nextId) nextId=d.nextId;
+        if(d.logs) logs=d.logs;
+        if(d.finePayments) finePayments=d.finePayments;
+        if(d.expenses) expenses=d.expenses;
+        if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+        saveLocal();
+        showSyncStatus('✅ 동기화 완료!', 2000);
+      } else {
+        // 로컬이 더 최신 → 시트에 다시 저장
+        showSyncStatus('📤 로컬→시트 업로드 중...', 0);
+        await saveToSheets();
+        showSyncStatus('✅ 업로드 완료!', 2000);
+      }
       return true;
     }
-    showSyncStatus('📭 저장된 데이터 없음', 2000);
+    // 시트가 비어있으면 로컬 데이터를 시트에 올림
+    if(logs.length > 0){
+      showSyncStatus('📤 시트에 업로드 중...', 0);
+      await saveToSheets();
+      showSyncStatus('✅ 업로드 완료!', 2000);
+    } else {
+      showSyncStatus('📭 데이터 없음', 2000);
+    }
     return false;
   } catch(e){
-    showSyncStatus('⚠️ 오프라인 — 로컬 데이터 사용', 3000);
+    console.warn('시트 불러오기 실패:', e);
+    showSyncStatus('⚠️ 오프라인 — 로컬 사용 중', 3000);
     return false;
   }
 }
@@ -1493,15 +1511,13 @@ function saveData(){
 }
 
 async function loadData(){
-  // 로컬 먼저 (빠르게 화면 표시 + 사진 복원)
-  loadLocal();
-  renderWeekly();
-  // 구글 시트에서 최신 데이터 가져오기
+  // 1. 로컬 먼저 빠르게 표시
+  const hasLocal = loadLocal();
+  if(hasLocal) renderWeekly();
+  // 2. 시트에서 최신 불러오기 (로컬과 비교해서 더 많은 쪽 사용)
   const ok = await loadFromSheets();
-  if(ok){
-    renderWeekly();
-    updateStorageBtn();
-  }
+  renderWeekly();
+  updateStorageBtn();
 }
 
 // 데이터 변경되는 모든 함수에 saveData() 자동 연결
