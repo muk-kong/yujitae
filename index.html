@@ -1410,16 +1410,6 @@ function updateStorageBtn(){
   } catch(e){}
 }
 
-// saveData에 버튼 업데이트 추가
-const _origSaveData = saveData;
-saveData = function(){
-  _origSaveData();
-  updateStorageBtn();
-  // 저장됨 표시 잠깐 보여주기
-  const btn = document.getElementById('storage-btn');
-  if(btn){ btn.textContent = '✅ 저장됨!'; setTimeout(()=>updateStorageBtn(), 1500); }
-};
-
 // ── LOCAL STORAGE ──
 const LS_KEY = 'yujitae_v1';
 const GS_URL = 'https://script.google.com/macros/s/AKfycbyfEx7y-qTB5dRnsKI3FhWPc5eWCjXxPN4s4LdkA_ukU9lnfiMkax4NW0uZuMjsgoJR/exec';
@@ -1427,6 +1417,7 @@ const GS_URL = 'https://script.google.com/macros/s/AKfycbyfEx7y-qTB5dRnsKI3FhWPc
 // ── 로컬 저장 (빠른 캐시용 + 사진 보관) ──
 function saveLocal(){
   try {
+    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT}));
   } catch(e){}
 }
 function loadLocal(){
