@@ -1449,80 +1449,41 @@ function loadLocal(){
 async function saveToSheets(){
   try {
     const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT};
-    const payloadStr = JSON.stringify(payload);
-    const encoded = encodeURIComponent(payloadStr);
-
-    // URL 길이 체크
-    if(encoded.length > 7500){
-      // 너무 길면 오래된 기록 경고
-      toast('⚠️ 데이터가 많아요! 오래된 기록을 정리해주세요.');
-    }
-
-    const cbName = 'gsSaveCallback_' + Date.now();
-    return new Promise((resolve)=>{
-      const script = document.createElement('script');
-      const timeout = setTimeout(()=>{
-        delete window[cbName];
-        try{ document.body.removeChild(script); }catch(e){}
-        resolve(false);
-      }, 10000);
-      window[cbName] = function(res){
-        clearTimeout(timeout);
-        delete window[cbName];
-        try{ document.body.removeChild(script); }catch(e){}
-        if(res && res.ok){
-          console.log('✅ 저장 완료');
-        }
-        resolve(res && res.ok);
-      };
-      script.src = `${GS_URL}?action=save&data=${encoded}&callback=${cbName}`;
-      document.body.appendChild(script);
+    const res = await fetch(GS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({payload: JSON.stringify(payload)})
     });
-  } catch(e){ console.warn('시트 저장 실패:', e); }
+    const json = await res.json();
+    if(json.ok) console.log('✅ 저장 완료');
+    return json.ok;
+  } catch(e){ console.warn('시트 저장 실패:', e); return false; }
 }
 
-// ── Google Sheets 불러오기 (JSONP 방식) ──
-function loadFromSheets(){
-  return new Promise((resolve)=>{
+async function loadFromSheets(){
+  try {
     showSyncStatus('🔄 데이터 불러오는 중...');
-    const cbName = 'gsCallback_' + Date.now();
-    const script = document.createElement('script');
-    const timeout = setTimeout(()=>{
-      delete window[cbName];
-      document.body.removeChild(script);
-      showSyncStatus('⚠️ 오프라인 — 로컬 데이터 사용', 3000);
-      resolve(false);
-    }, 8000);
-
-    window[cbName] = function(json){
-      clearTimeout(timeout);
-      delete window[cbName];
-      try { document.body.removeChild(script); } catch(e){}
-      try {
-        if(json.ok && json.data && json.data[0] && json.data[0][0]){
-          const d = JSON.parse(json.data[0][0]);
-          if(d.GOAL) GOAL=d.GOAL;
-          if(d.members) members=d.members;
-          if(d.nextId) nextId=d.nextId;
-          if(d.logs) logs=d.logs;
-          if(d.finePayments) finePayments=d.finePayments;
-          if(d.expenses) expenses=d.expenses;
-          if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
-          saveLocal();
-          showSyncStatus('✅ 동기화 완료!', 2000);
-          resolve(true);
-        } else {
-          showSyncStatus('📭 저장된 데이터 없음', 2000);
-          resolve(false);
-        }
-      } catch(e){
-        showSyncStatus('⚠️ 데이터 파싱 오류', 3000);
-        resolve(false);
-      }
-    };
-    script.src = `${GS_URL}?sheet=data&callback=${cbName}`;
-    document.body.appendChild(script);
-  });
+    const res = await fetch(`${GS_URL}?sheet=data`);
+    const json = await res.json();
+    if(json.ok && json.data && json.data[0] && json.data[0][0] && json.data[0][0]!==''){
+      const d = JSON.parse(json.data[0][0]);
+      if(d.GOAL) GOAL=d.GOAL;
+      if(d.members) members=d.members;
+      if(d.nextId) nextId=d.nextId;
+      if(d.logs) logs=d.logs;
+      if(d.finePayments) finePayments=d.finePayments;
+      if(d.expenses) expenses=d.expenses;
+      if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+      saveLocal();
+      showSyncStatus('✅ 동기화 완료!', 2000);
+      return true;
+    }
+    showSyncStatus('📭 저장된 데이터 없음', 2000);
+    return false;
+  } catch(e){
+    showSyncStatus('⚠️ 오프라인 — 로컬 데이터 사용', 3000);
+    return false;
+  }
 }
 
 function showSyncStatus(msg, hideAfter=0){
