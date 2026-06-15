@@ -1448,15 +1448,14 @@ function loadLocal(){
 // ── Google Sheets 저장 ──
 async function saveToSheets(){
   try {
-    // 사진(base64)은 용량이 너무 커서 제외 — 로컬에만 보관
-    const logsWithoutPhoto = logs;
-    const membersWithoutPhoto = members;
-    const payload = {GOAL, members:membersWithoutPhoto, nextId, logs:logsWithoutPhoto, finePayments, expenses, FINE_AMOUNT};
-    const encoded = encodeURIComponent(JSON.stringify(payload));
+    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT};
+    const payloadStr = JSON.stringify(payload);
+    const encoded = encodeURIComponent(payloadStr);
 
-    // URL이 너무 길면 저장 실패 방지 — 8000자 초과시 경고
+    // URL 길이 체크
     if(encoded.length > 7500){
-      toast('⚠️ 데이터가 너무 많아 저장에 실패할 수 있어요');
+      // 너무 길면 오래된 기록 경고
+      toast('⚠️ 데이터가 많아요! 오래된 기록을 정리해주세요.');
     }
 
     const cbName = 'gsSaveCallback_' + Date.now();
@@ -1466,11 +1465,14 @@ async function saveToSheets(){
         delete window[cbName];
         try{ document.body.removeChild(script); }catch(e){}
         resolve(false);
-      }, 8000);
+      }, 10000);
       window[cbName] = function(res){
         clearTimeout(timeout);
         delete window[cbName];
         try{ document.body.removeChild(script); }catch(e){}
+        if(res && res.ok){
+          console.log('✅ 저장 완료');
+        }
         resolve(res && res.ok);
       };
       script.src = `${GS_URL}?action=save&data=${encoded}&callback=${cbName}`;
