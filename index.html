@@ -1440,59 +1440,79 @@ function loadLocal(){
 async function saveToSheets(){
   try {
     const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT};
-    const res = await fetch(GS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({payload: JSON.stringify(payload)})
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    const cbName = 'gsSave_' + Date.now();
+    return new Promise((resolve)=>{
+      const script = document.createElement('script');
+      const timeout = setTimeout(()=>{
+        delete window[cbName];
+        try{document.body.removeChild(script);}catch(e){}
+        resolve(false);
+      }, 10000);
+      window[cbName] = function(res){
+        clearTimeout(timeout);
+        delete window[cbName];
+        try{document.body.removeChild(script);}catch(e){}
+        resolve(res && res.ok);
+      };
+      script.src = `${GS_URL}?action=save&data=${encoded}&callback=${cbName}`;
+      document.body.appendChild(script);
     });
-    const json = await res.json();
-    if(json.ok) console.log('✅ 저장 완료');
-    return json.ok;
   } catch(e){ console.warn('시트 저장 실패:', e); return false; }
 }
 
-async function loadFromSheets(){
-  try {
+function loadFromSheets(){
+  return new Promise((resolve)=>{
     showSyncStatus('🔄 동기화 중...');
-    const res = await fetch(`${GS_URL}?sheet=data`);
-    const json = await res.json();
-    if(json.ok && json.data && json.data[0] && json.data[0][0] && json.data[0][0]!==''){
-      const d = JSON.parse(json.data[0][0]);
-      // 시트 데이터가 로컬보다 기록이 많으면 시트 우선
-      const sheetLogCount = (d.logs||[]).length;
-      const localLogCount = logs.length;
-      if(sheetLogCount >= localLogCount){
-        if(d.GOAL) GOAL=d.GOAL;
-        if(d.members) members=d.members;
-        if(d.nextId) nextId=d.nextId;
-        if(d.logs) logs=d.logs;
-        if(d.finePayments) finePayments=d.finePayments;
-        if(d.expenses) expenses=d.expenses;
-        if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
-        saveLocal();
-        showSyncStatus('✅ 동기화 완료!', 2000);
-      } else {
-        // 로컬이 더 최신 → 시트에 다시 저장
-        showSyncStatus('📤 로컬→시트 업로드 중...', 0);
-        await saveToSheets();
-        showSyncStatus('✅ 업로드 완료!', 2000);
+    const cbName = 'gsLoad_' + Date.now();
+    const script = document.createElement('script');
+    const timeout = setTimeout(()=>{
+      delete window[cbName];
+      try{document.body.removeChild(script);}catch(e){}
+      showSyncStatus('⚠️ 오프라인 — 로컬 사용 중', 3000);
+      resolve(false);
+    }, 10000);
+    window[cbName] = function(json){
+      clearTimeout(timeout);
+      delete window[cbName];
+      try{document.body.removeChild(script);}catch(e){}
+      try{
+        if(json.ok && json.data && json.data[0] && json.data[0][0] && json.data[0][0]!==''){
+          const d = JSON.parse(json.data[0][0]);
+          const sheetLogCount = (d.logs||[]).length;
+          const localLogCount = logs.length;
+          if(sheetLogCount >= localLogCount){
+            if(d.GOAL) GOAL=d.GOAL;
+            if(d.members) members=d.members;
+            if(d.nextId) nextId=d.nextId;
+            if(d.logs) logs=d.logs;
+            if(d.finePayments) finePayments=d.finePayments;
+            if(d.expenses) expenses=d.expenses;
+            if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+            saveLocal();
+            showSyncStatus('✅ 동기화 완료!', 2000);
+          } else {
+            showSyncStatus('📤 로컬→시트 업로드 중...', 0);
+            saveToSheets().then(()=>showSyncStatus('✅ 업로드 완료!', 2000));
+          }
+          resolve(true);
+        } else {
+          if(logs.length > 0){
+            showSyncStatus('📤 시트에 업로드 중...', 0);
+            saveToSheets().then(()=>showSyncStatus('✅ 업로드 완료!', 2000));
+          } else {
+            showSyncStatus('📭 데이터 없음', 2000);
+          }
+          resolve(false);
+        }
+      } catch(e){
+        showSyncStatus('⚠️ 데이터 오류', 3000);
+        resolve(false);
       }
-      return true;
-    }
-    // 시트가 비어있으면 로컬 데이터를 시트에 올림
-    if(logs.length > 0){
-      showSyncStatus('📤 시트에 업로드 중...', 0);
-      await saveToSheets();
-      showSyncStatus('✅ 업로드 완료!', 2000);
-    } else {
-      showSyncStatus('📭 데이터 없음', 2000);
-    }
-    return false;
-  } catch(e){
-    console.warn('시트 불러오기 실패:', e);
-    showSyncStatus('⚠️ 오프라인 — 로컬 사용 중', 3000);
-    return false;
-  }
+    };
+    script.src = `${GS_URL}?sheet=data&callback=${cbName}`;
+    document.body.appendChild(script);
+  });
 }
 
 function showSyncStatus(msg, hideAfter=0){
