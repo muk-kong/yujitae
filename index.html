@@ -207,7 +207,11 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
     </div>
   </div>
 
-  <!-- 미달성 인원 전체 폭 -->
+  <!-- 회원별 이번 주 목표 선택 -->
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="ptitle"><span class="dot"></span>이번 주 목표 설정 <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0;margin-left:4px;">기본 ${GOAL}km · 조정 가능</span></div>
+    <div id="weekly-goal-selector" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
+  </div>
   <div class="panel" style="margin-bottom:16px;">
     <div class="ptitle"><span class="dot"></span>미달성 인원</div>
     <div id="undone-list" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
@@ -478,6 +482,17 @@ let members=[
   {id:'7',name:'회원 7',emoji:'',initial:''},
 ];
 let nextId=8;
+// 회원별 주간 목표 {memberId_weekStart: 7 or 10}
+let weeklyGoals = {};
+
+function getMemberGoal(memberId, weekStart){
+  const key = memberId + '_' + weekStart;
+  return weeklyGoals[key] || GOAL;
+}
+function setMemberGoal(memberId, weekStart, goal){
+  const key = memberId + '_' + weekStart;
+  weeklyGoals[key] = goal;
+}
 const PALETTE=[
   {bg:'rgba(255,77,28,.2)',fg:'#FF4D1C'},{bg:'rgba(41,121,255,.2)',fg:'#2979FF'},
   {bg:'rgba(0,230,118,.2)',fg:'#00E676'},{bg:'rgba(255,184,0,.2)',fg:'#FFB800'},
@@ -568,9 +583,10 @@ function renderWeekly(){
   const sun=getSunday(mon);
   const start=fmt(mon),end=fmt(sun);
   const totals={};members.forEach(m=>{totals[m.id]=getDistInRange(m.id,start,end);});
+  const memberGoals={};members.forEach(m=>{memberGoals[m.id]=getMemberGoal(m.id,start);});
   const totalDist=Object.values(totals).reduce((a,b)=>a+b,0);
-  const achieved=members.filter(m=>totals[m.id]>=GOAL).length;
-  const over=members.filter(m=>totals[m.id]>GOAL).length;
+  const achieved=members.filter(m=>totals[m.id]>=memberGoals[m.id]).length;
+  const over=members.filter(m=>totals[m.id]>memberGoals[m.id]).length;
   const weekLogs=logs.filter(l=>l.date>=start&&l.date<=end);
   document.getElementById('w-total').textContent=totalDist.toFixed(1);
   document.getElementById('w-achieved').textContent=achieved;
@@ -578,41 +594,60 @@ function renderWeekly(){
   document.getElementById('w-over').textContent=over;
   document.getElementById('w-logs').textContent=weekLogs.length;
   document.getElementById('goal-badge-val').textContent=GOAL+'km';
-  document.getElementById('goal-panel-label').textContent=`${fmtLabel(mon)} · 목표 ${GOAL}km`;
+  document.getElementById('goal-panel-label').textContent=`${fmtLabel(mon)} · 기본목표 ${GOAL}km`;
+
+  // 목표 선택 UI
+  const gsel = document.getElementById('weekly-goal-selector');
+  if(gsel){
+    gsel.innerHTML = members.map(m=>{
+      const mg = memberGoals[m.id];
+      const c = memberColor(m.id);
+      return `<div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          ${avatarHtml(m.id,24)}
+          <span style="font-size:12px;font-weight:700;">${m.name}</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="changeMemberGoal('${m.id}','${start}',${GOAL})" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mg===GOAL?'var(--orange)':'var(--border)'};background:${mg===GOAL?'rgba(255,77,28,.15)':'var(--dark4)'};color:${mg===GOAL?'var(--orange)':'var(--text-dim)'};">${GOAL}km</button>
+          <button onclick="changeMemberGoal('${m.id}','${start}',7)" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mg===7?'var(--blue)':'var(--border)'};background:${mg===7?'rgba(41,121,255,.15)':'var(--dark4)'};color:${mg===7?'var(--blue)':'var(--text-dim)'};">7km</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   // RANKING
   const sorted=[...members].sort((a,b)=>totals[b.id]-totals[a.id]);
   document.getElementById('ranking-list').innerHTML=sorted.map((m,i)=>{
-    const dist=totals[m.id],pct=Math.min((dist/GOAL)*100,100),isOver=dist>GOAL;
+    const dist=totals[m.id],mg=memberGoals[m.id],pct=Math.min((dist/mg)*100,100),isOver=dist>mg;
     const cls=i===0?'top1':i===1?'top2':i===2?'top3':'';
     const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
     return `<div class="rank-item ${cls}">
       <div class="rnum">${medal}</div>${avatarHtml(m.id,34)}
       <div class="rinfo">
-        <div class="rname">${m.name}${isOver?'<span class="over-badge">초과</span>':''}</div>
+        <div class="rname">${m.name}${isOver?'<span class="over-badge">초과</span>':''}${mg<GOAL?'<span style="background:rgba(41,121,255,.15);color:#64B5F6;border:1px solid rgba(41,121,255,.2);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;">'+mg+'km</span>':''}</div>
         <div class="prog-track"><div class="prog-fill ${isOver?'over':'norm'}" style="width:${pct}%"></div></div>
-        <div class="rmeta" style="margin-top:3px">${dist.toFixed(1)}km / ${GOAL}km</div>
+        <div class="rmeta" style="margin-top:3px">${dist.toFixed(1)}km / ${mg}km</div>
       </div>
       <div class="rdist">${dist.toFixed(1)}<small>km</small></div>
     </div>`;
   }).join('');
 
-  // UNDONE - 가로 카드 레이아웃
-  const undone=members.filter(m=>totals[m.id]<GOAL);
+  // UNDONE
+  const undone=members.filter(m=>totals[m.id]<memberGoals[m.id]);
   document.getElementById('undone-list').innerHTML=undone.length===0
     ?'<div style="color:var(--green);font-size:13px;padding:8px">🎉 전원 달성!</div>'
     :undone.map(m=>{
-      const dist=totals[m.id],remain=(GOAL-dist).toFixed(1);
-      const pct=Math.round((dist/GOAL)*100);
+      const dist=totals[m.id],mg=memberGoals[m.id],remain=(mg-dist).toFixed(1);
+      const pct=Math.round((dist/mg)*100);
       const c=memberColor(m.id);
-      return `<div style="display:flex;align-items:center;gap:10px;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-width:180px;flex:1;">
+      return `<div style="display:flex;align-items:center;gap:10px;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">
         ${avatarHtml(m.id,32)}
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${m.name}</div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${m.name} <span style="font-size:10px;color:var(--text-dim);">목표 ${mg}km</span></div>
           <div style="height:4px;background:var(--dark4);border-radius:2px;overflow:hidden;margin-bottom:3px;">
             <div style="height:100%;width:${pct}%;background:${c.fg};border-radius:2px;"></div>
           </div>
-          <div style="font-size:10px;color:var(--text-dim);">${dist.toFixed(1)}km / ${GOAL}km</div>
+          <div style="font-size:10px;color:var(--text-dim);">${dist.toFixed(1)}km / ${mg}km</div>
         </div>
         <div style="font-size:12px;font-weight:700;color:var(--orange);white-space:nowrap;">잔여 ${remain}km</div>
       </div>`;
@@ -621,13 +656,13 @@ function renderWeekly(){
   // GOAL GRID
   const goalEl=document.getElementById('goal-grid');
   goalEl.innerHTML=members.map(m=>{
-    const dist=totals[m.id],pct=(dist/GOAL)*100,isOver=dist>GOAL;
+    const dist=totals[m.id],mg=memberGoals[m.id],pct=(dist/mg)*100,isOver=dist>mg;
     let cls='low',barC='#555';
     if(isOver){cls='over';barC='#00E676';}else if(pct>=100){cls='done';barC='#FF4D1C';}else if(pct>=60){cls='mid';barC='#FFB800';}
     return `<div class="gcard">
-      <div class="gmem"><span style="display:flex;align-items:center;gap:6px;">${avatarHtml(m.id,20)}<span>${m.name}</span></span><span class="gpct ${cls}">${isOver?'🔥 ':''}${Math.round(pct)}%</span></div>
+      <div class="gmem"><span style="display:flex;align-items:center;gap:6px;">${avatarHtml(m.id,20)}<span>${m.name}</span>${mg<GOAL?`<span style="font-size:9px;color:var(--blue);background:rgba(41,121,255,.15);padding:1px 5px;border-radius:3px;">${mg}km</span>`:''}</span><span class="gpct ${cls}">${isOver?'🔥 ':''}${Math.round(pct)}%</span></div>
       <div class="gbar-track"><div class="gbar-fill" style="width:${Math.min(pct,100)}%;background:${barC}"></div></div>
-      <div class="gdetail">${dist.toFixed(1)}km / ${GOAL}km${isOver?` (+${(dist-GOAL).toFixed(1)}km 초과)`:''}</div>
+      <div class="gdetail">${dist.toFixed(1)}km / ${mg}km${isOver?` (+${(dist-mg).toFixed(1)}km 초과)`:''}</div>
     </div>`;
   }).join('');
 
@@ -1129,6 +1164,13 @@ function submitLog(){
 
 // ── LIGHTBOX ──
 
+function changeMemberGoal(memberId, weekStart, goal){
+  setMemberGoal(memberId, weekStart, goal);
+  saveData();
+  renderWeekly();
+  toast(`✅ ${memberName(memberId)} 이번 주 목표: ${goal}km`);
+}
+
 // ── SETTINGS ──
 let tempNewMembers=[];
 function openSettings(){document.getElementById('s-goal').value=GOAL;tempNewMembers=[];renderSettingsMemberList();document.getElementById('settings-modal').classList.add('show');}
@@ -1512,7 +1554,7 @@ const GS_URL = 'https://yujitae.ahsxj12.workers.dev';
 // ── 로컬 저장 (빠른 캐시용 + 사진 보관) ──
 function saveLocal(){
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT}));
+    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals}));
   } catch(e){}
 }
 function loadLocal(){
@@ -1527,6 +1569,7 @@ function loadLocal(){
     if(d.finePayments) finePayments=d.finePayments;
     if(d.expenses) expenses=d.expenses;
     if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+    if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
     return true;
   } catch(e){ return false; }
 }
@@ -1534,7 +1577,7 @@ function loadLocal(){
 // ── Google Sheets 저장 ──
 async function saveToSheets(){
   try {
-    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT};
+    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals};
     const res = await fetch(GS_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1563,6 +1606,7 @@ async function loadFromSheets(){
         if(d.finePayments) finePayments=d.finePayments;
         if(d.expenses) expenses=d.expenses;
         if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+        if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
         saveLocal();
         showSyncStatus('✅ 동기화 완료!', 2000);
       } else {
