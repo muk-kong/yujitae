@@ -466,6 +466,11 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
       <div id="s-members"></div>
       <button class="sadd-btn" onclick="addMemberRow()">+ 회원 추가</button>
     </div>
+    <div style="margin-top:20px;">
+      <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-bottom:8px;border-bottom:1px solid var(--border)">참여 시작 주차</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">중간 합류 회원의 참여 시작 주 월요일 날짜를 입력하세요. 이전 주는 미참여로 처리돼요.</div>
+      <div id="s-joinweeks"></div>
+    </div>
     <div class="mbtns"><button class="mbtn-cancel" onclick="closeSettings()">취소</button><button class="mbtn-ok" onclick="saveSettings()">저장 ✓</button></div>
   </div>
 </div>
@@ -1173,7 +1178,23 @@ function changeMemberGoal(memberId, weekStart, goal){
 
 // ── SETTINGS ──
 let tempNewMembers=[];
-function openSettings(){document.getElementById('s-goal').value=GOAL;tempNewMembers=[];renderSettingsMemberList();document.getElementById('settings-modal').classList.add('show');}
+function openSettings(){
+  document.getElementById('s-goal').value=GOAL;
+  tempNewMembers=[];
+  renderSettingsMemberList();
+  // 참여 시작 주차 UI
+  const jw = document.getElementById('s-joinweeks');
+  if(jw){
+    jw.innerHTML = members.map(m=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        ${avatarHtml(m.id,26)}
+        <span style="font-size:12px;min-width:90px;">${m.name}</span>
+        <input type="date" class="finput" id="jw-${m.id}" value="${joinWeeks[m.id]||''}" style="flex:1;max-width:160px;">
+        <button onclick="document.getElementById('jw-${m.id}').value=''" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px;">✕</button>
+      </div>`).join('');
+  }
+  document.getElementById('settings-modal').classList.add('show');
+}
 function closeSettings(){document.getElementById('settings-modal').classList.remove('show');}
 function renderSettingsMemberList(){
   const container = document.getElementById('s-members');
@@ -1347,6 +1368,11 @@ function saveSettings(){
       nextId++;
     }
   });
+  // 참여 시작 주차 저장
+  members.forEach(m=>{
+    const el=document.getElementById('jw-'+m.id);
+    if(el) joinWeeks[m.id]=el.value||null;
+  });
   tempNewMembers=[];closeSettings();renderWeekly();toast('✅ 설정이 저장됐어요!');
 }
 
@@ -1362,13 +1388,53 @@ let fineWeekMonth=null;
 
 function saveFineAmount(){const v=parseInt(document.getElementById('fine-amount-input').value);if(v&&v>0){FINE_AMOUNT=v;toast(`✅ 벌금 ${v.toLocaleString()}원으로 저장!`);renderFine();}}
 
+// 휴식 신청 {id, member, weekStart, reason}
+let absences = [];
+
+// 회원별 참여 시작 주차 {memberId: 'YYYY-MM-DD'} — 크루장이 직접 설정
+let joinWeeks = {};
+
+function getMemberJoinWeek(memberId){
+  // 수동 설정값 우선
+  if(joinWeeks[memberId]) return joinWeeks[memberId];
+  return null; // 설정 안 하면 모든 주차 적용
+}
+
+function isAbsent(memberId, weekStart){
+  return absences.some(a=>a.member===memberId&&a.weekStart===weekStart);
+}
+
 function calcFineForWeek(start){
   const mon=new Date(start),sun=getSunday(mon),end=fmt(sun);
   return members.map(m=>{
+    const joinWeek = getMemberJoinWeek(m.id);
+    // 참여 시작 주차 이전이면 미참여 제외
+    if(joinWeek && start < joinWeek){
+      return{member:m.id,dist:0,owed:0,paid:0,unpaid:0,achieved:true,exempt:true,exemptReason:'미참여'};
+    }
+    // 휴식 신청한 주차면 제외
+    if(isAbsent(m.id, start)){
+      const dist=getDistInRange(m.id,start,end);
+      return{member:m.id,dist,owed:0,paid:0,unpaid:0,achieved:true,exempt:true,exemptReason:'휴식'};
+    }
+    const mg = getMemberGoal(m.id, start);
     const dist=getDistInRange(m.id,start,end);
     const paid=finePayments.filter(p=>p.member===m.id&&p.weekStart===start).reduce((s,p)=>s+p.amount,0);
-    return{member:m.id,dist,owed:dist<GOAL?FINE_AMOUNT:0,paid,unpaid:dist<GOAL?Math.max(0,FINE_AMOUNT-paid):0,achieved:dist>=GOAL};
+    const achieved=dist>=mg;
+    return{member:m.id,dist,owed:achieved?0:FINE_AMOUNT,paid,unpaid:achieved?0:Math.max(0,FINE_AMOUNT-paid),achieved,exempt:false,exemptReason:''};
   });
+}
+
+function addAbsence(memberId, weekStart){
+  if(isAbsent(memberId, weekStart)){toast('이미 휴식 신청됐어요');return;}
+  absences.push({id:Date.now(),member:memberId,weekStart});
+  saveData(); renderFine();
+  toast(`✅ ${memberName(memberId)} 휴식 신청됐어요`);
+}
+function removeAbsence(memberId, weekStart){
+  absences = absences.filter(a=>!(a.member===memberId&&a.weekStart===weekStart));
+  saveData(); renderFine();
+  toast(`↩️ ${memberName(memberId)} 휴식 신청 취소됐어요`);
 }
 
 function markPaid(memberId,weekStart){
@@ -1412,8 +1478,12 @@ function renderFineKing(){
     const allWeeks = getAllPastWeeks();
     let totalFined = 0, missWeeks = 0;
     allWeeks.forEach(wStart=>{
+      const joinWeek=getMemberJoinWeek(m.id);
+      if(!joinWeek||wStart<joinWeek)return;
+      if(isAbsent(m.id,wStart))return;
       const sun=getSunday(new Date(wStart));
-      if(getDistInRange(m.id,wStart,fmt(sun))<GOAL){ totalFined+=FINE_AMOUNT; missWeeks++; }
+      const mg=getMemberGoal(m.id,wStart);
+      if(getDistInRange(m.id,wStart,fmt(sun))<mg){ totalFined+=FINE_AMOUNT; missWeeks++; }
     });
     return { ...m, missWeeks, totalFined, totalPaid, unpaid: Math.max(0,totalFined-totalPaid) };
   }).filter(m=>m.totalPaid>0).sort((a,b)=>b.totalPaid-a.totalPaid);
@@ -1463,8 +1533,12 @@ function renderFine(){
   const allWeeks=getAllPastWeeks();
   let totalOwed=0;
   members.forEach(m=>allWeeks.forEach(wStart=>{
-    const mon=new Date(wStart),sun=getSunday(mon);
-    if(getDistInRange(m.id,wStart,fmt(sun))<GOAL)totalOwed+=FINE_AMOUNT;
+    const joinWeek=getMemberJoinWeek(m.id);
+    if(!joinWeek||wStart<joinWeek)return;
+    if(isAbsent(m.id,wStart))return;
+    const sun=getSunday(new Date(wStart));
+    const mg=getMemberGoal(m.id,wStart);
+    if(getDistInRange(m.id,wStart,fmt(sun))<mg)totalOwed+=FINE_AMOUNT;
   }));
   document.getElementById('f-total-pot').textContent=totalPot.toLocaleString()+'원';
   document.getElementById('f-total-spent').textContent=totalSpent.toLocaleString()+'원';
@@ -1476,14 +1550,45 @@ function renderFine(){
   const fines=calcFineForWeek(start);
   const grid=document.getElementById('fine-member-grid');
   grid.innerHTML=fines.map(f=>{
-    if(f.achieved){return`<div class="fine-member-card paid-all">${avatarHtml(f.member,40)}<div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div><div class="fmc-detail">목표 달성 ✅ — 벌금 없음</div><div class="fmc-detail">달성 ${f.dist.toFixed(1)}km</div></div><div class="fmc-amount"><div class="fmc-owed" style="color:var(--green);font-size:20px;">🎉</div></div></div>`;}
+    // 미참여 or 휴식 면제
+    if(f.exempt){
+      const badge = f.exemptReason==='휴식'
+        ? `<span style="background:rgba(41,121,255,.15);color:#64B5F6;border:1px solid rgba(41,121,255,.2);font-size:10px;padding:2px 7px;border-radius:4px;">🛌 휴식</span>`
+        : `<span style="background:var(--dark4);color:var(--text-dim);font-size:10px;padding:2px 7px;border-radius:4px;">미참여</span>`;
+      const cancelBtn = f.exemptReason==='휴식'
+        ? `<button class="sdanger-btn" style="font-size:10px;padding:3px 8px;" onclick="removeAbsence('${f.member}','${start}')">취소</button>`
+        : '';
+      return `<div class="fine-member-card paid-all">${avatarHtml(f.member,40)}
+        <div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div>
+        <div class="fmc-detail">${badge} 벌금 면제</div>
+        ${f.dist>0?`<div class="fmc-detail">달린 거리 ${f.dist.toFixed(1)}km</div>`:''}</div>
+        <div class="fmc-amount">${cancelBtn}</div>
+      </div>`;
+    }
+    // 목표 달성
+    if(f.achieved){
+      return `<div class="fine-member-card paid-all">${avatarHtml(f.member,40)}
+        <div class="fmc-info">
+          <div class="fmc-name">${memberName(f.member)}</div>
+          <div class="fmc-detail">달성 ${f.dist.toFixed(1)}km / 목표 ${getMemberGoal(f.member,start)}km</div>
+        </div>
+        <div class="fmc-amount">
+          <div class="fmc-owed" style="color:var(--green);font-size:14px;">✅ 목표달성</div>
+          <button onclick="addAbsence('${f.member}','${start}')" style="margin-top:6px;background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.3);color:#64B5F6;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">휴식 신청</button>
+        </div>
+      </div>`;
+    }
+    // 미달성
     const isPaid=f.unpaid<=0;
     return`<div class="fine-member-card ${isPaid?'paid-all':'has-fine'}">${avatarHtml(f.member,40)}
       <div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div>
-      <div class="fmc-detail">달성 ${f.dist.toFixed(1)}km / 목표 ${GOAL}km</div>
+      <div class="fmc-detail">달성 ${f.dist.toFixed(1)}km / 목표 ${getMemberGoal(f.member,start)}km</div>
       <div class="fmc-detail">납부 ${f.paid.toLocaleString()}원 / 벌금 ${f.owed.toLocaleString()}원</div></div>
-      <div class="fmc-amount"><div class="fmc-owed" style="color:${isPaid?'var(--green)':'var(--orange)'};">${isPaid?'✅ 완납':'⚠️ '+f.unpaid.toLocaleString()+'원'}</div>
-      ${!isPaid?`<button class="paid-btn" style="margin-top:6px;" onclick="markPaid('${f.member}','${start}')">납부처리</button>`:''}</div></div>`;
+      <div class="fmc-amount" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        <div class="fmc-owed" style="color:${isPaid?'var(--green)':'var(--orange)'};">${isPaid?'✅ 완납':'⚠️ '+f.unpaid.toLocaleString()+'원'}</div>
+        ${!isPaid?`<button class="paid-btn" onclick="markPaid('${f.member}','${start}')">납부처리</button>`:''}
+        <button onclick="addAbsence('${f.member}','${start}')" style="background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.3);color:#64B5F6;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">휴식 신청</button>
+      </div></div>`;
   }).join('');
 
   // Payment history (with cancel)
@@ -1554,7 +1659,7 @@ const GS_URL = 'https://yujitae.ahsxj12.workers.dev';
 // ── 로컬 저장 (빠른 캐시용 + 사진 보관) ──
 function saveLocal(){
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals}));
+    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks}));
   } catch(e){}
 }
 function loadLocal(){
@@ -1570,6 +1675,7 @@ function loadLocal(){
     if(d.expenses) expenses=d.expenses;
     if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
     if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
+    if(d.absences) absences=d.absences;
     return true;
   } catch(e){ return false; }
 }
@@ -1577,7 +1683,7 @@ function loadLocal(){
 // ── Google Sheets 저장 ──
 async function saveToSheets(){
   try {
-    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals};
+    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences};
     const res = await fetch(GS_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1607,6 +1713,7 @@ async function loadFromSheets(){
         if(d.expenses) expenses=d.expenses;
         if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
         if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
+        if(d.absences) absences=d.absences;
         saveLocal();
         showSyncStatus('✅ 동기화 완료!', 2000);
       } else {
