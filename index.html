@@ -207,6 +207,17 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
     </div>
   </div>
 
+  <!-- 이번 주 전체 임시 목표 -->
+  <div class="panel" style="margin-bottom:16px;" id="week-override-panel">
+    <div class="ptitle" style="justify-content:space-between;">
+      <span><span class="dot"></span>이번 주 전체 임시 목표 <span id="override-badge" style="display:none;background:rgba(255,184,0,.2);color:var(--gold);border:1px solid rgba(255,184,0,.4);font-size:10px;padding:2px 8px;border-radius:12px;margin-left:6px;font-weight:700;text-transform:none;letter-spacing:0;"></span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text-dim);">태풍·우천 등 특수상황 시 이번 주 전원 목표를 일괄 변경해요.</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="override-btns"></div>
+    </div>
+  </div>
+
   <!-- 회원별 이번 주 목표 선택 -->
   <div class="panel" style="margin-bottom:16px;">
     <div class="ptitle"><span class="dot"></span>이번 주 목표 설정 <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0;margin-left:4px;">기본 ${GOAL}km · 조정 가능</span></div>
@@ -480,6 +491,8 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
 <script>
 // ── STATE ──
 let GOAL=10;
+// 주차별 전체 임시 목표 {weekStart: km} — 태풍 등 특별 상황
+let weekOverrides = {};
 let members=[
   {id:'1',name:'회원 1',emoji:'',initial:''},{id:'2',name:'회원 2',emoji:'',initial:''},
   {id:'3',name:'회원 3',emoji:'',initial:''},{id:'4',name:'회원 4',emoji:'',initial:''},
@@ -491,6 +504,9 @@ let nextId=8;
 let weeklyGoals = {};
 
 function getMemberGoal(memberId, weekStart){
+  // 주차 전체 임시 목표 최우선
+  if(weekOverrides[weekStart]) return weekOverrides[weekStart];
+  // 개인 선택 목표
   const key = memberId + '_' + weekStart;
   return weeklyGoals[key] || GOAL;
 }
@@ -601,7 +617,30 @@ function renderWeekly(){
   document.getElementById('goal-badge-val').textContent=GOAL+'km';
   document.getElementById('goal-panel-label').textContent=`${fmtLabel(mon)} · 기본목표 ${GOAL}km`;
 
-  // 목표 선택 UI
+  // 임시 목표 버튼 렌더링
+  const overrideBtns = document.getElementById('override-btns');
+  const overrideBadge = document.getElementById('override-badge');
+  const currentOverride = weekOverrides[start];
+  if(overrideBtns){
+    const options = [
+      {km: null, label: `기본 ${GOAL}km`, color: 'var(--orange)'},
+      {km: 7, label: '7km'},
+      {km: 5, label: '5km ⛈️'},
+      {km: 3, label: '3km 🌊'},
+    ];
+    overrideBtns.innerHTML = options.map(o=>{
+      const isActive = currentOverride === o.km || (!currentOverride && o.km === null);
+      return `<button onclick="setWeekOverride('${start}',${o.km})" style="padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${isActive?'var(--orange)':'var(--border)'};background:${isActive?'rgba(255,77,28,.15)':'var(--dark4)'};color:${isActive?'var(--orange)':'var(--text-dim)'};font-weight:${isActive?700:400};">${o.label}</button>`;
+    }).join('');
+  }
+  if(overrideBadge){
+    if(currentOverride){
+      overrideBadge.style.display='inline';
+      overrideBadge.textContent=`⚡ 임시 ${currentOverride}km 적용 중`;
+    } else {
+      overrideBadge.style.display='none';
+    }
+  }
   const gsel = document.getElementById('weekly-goal-selector');
   if(gsel){
     gsel.innerHTML = members.map(m=>{
@@ -1169,6 +1208,18 @@ function submitLog(){
 
 // ── LIGHTBOX ──
 
+function setWeekOverride(weekStart, km){
+  if(km === null || km === 'null'){
+    delete weekOverrides[weekStart];
+    toast(`✅ 이번 주 목표가 기본 ${GOAL}km로 돌아왔어요`);
+  } else {
+    weekOverrides[weekStart] = parseInt(km);
+    toast(`⚡ 이번 주 전체 목표 ${km}km로 임시 변경됐어요!`);
+  }
+  saveData();
+  renderWeekly();
+}
+
 function changeMemberGoal(memberId, weekStart, goal){
   setMemberGoal(memberId, weekStart, goal);
   saveData();
@@ -1659,7 +1710,7 @@ const GS_URL = 'https://yujitae.ahsxj12.workers.dev';
 // ── 로컬 저장 (빠른 캐시용 + 사진 보관) ──
 function saveLocal(){
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks}));
+    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks,weekOverrides}));
   } catch(e){}
 }
 function loadLocal(){
@@ -1676,6 +1727,8 @@ function loadLocal(){
     if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
     if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
     if(d.absences) absences=d.absences;
+    if(d.joinWeeks) joinWeeks=d.joinWeeks;
+    if(d.weekOverrides) weekOverrides=d.weekOverrides;
     return true;
   } catch(e){ return false; }
 }
@@ -1683,7 +1736,7 @@ function loadLocal(){
 // ── Google Sheets 저장 ──
 async function saveToSheets(){
   try {
-    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences};
+    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks,weekOverrides};
     const res = await fetch(GS_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1714,6 +1767,8 @@ async function loadFromSheets(){
         if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
         if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
         if(d.absences) absences=d.absences;
+        if(d.joinWeeks) joinWeeks=d.joinWeeks;
+        if(d.weekOverrides) weekOverrides=d.weekOverrides;
         saveLocal();
         showSyncStatus('✅ 동기화 완료!', 2000);
       } else {
