@@ -167,6 +167,7 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
   <div class="nav-tab" onclick="switchPage('total',this)">🏆 총합 현황</div>
   <div class="nav-tab" onclick="switchPage('motivation',this)">🎖️ 동기부여</div>
   <div class="nav-tab" onclick="switchPage('fine',this)">💸 벌금 관리</div>
+  <div class="nav-tab" onclick="switchPage('reward',this)">🎁 상금 관리</div>
 </nav>
 
 <!-- WEEKLY -->
@@ -404,6 +405,76 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
 
 </div>
 
+<!-- REWARD PAGE -->
+<div class="page" id="page-reward">
+<div class="container">
+  <!-- 히어로 -->
+  <div style="background:linear-gradient(135deg,rgba(255,184,0,.12),rgba(0,230,118,.08));border:1px solid rgba(255,184,0,.25);border-radius:16px;padding:28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:16px;text-align:center;">
+    <div><div style="font-family:'Black Han Sans',sans-serif;font-size:36px;color:var(--gold);" id="rw-total-pot">0원</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px;">💰 총 마일리지 적립</div></div>
+    <div><div style="font-family:'Black Han Sans',sans-serif;font-size:36px;color:var(--orange);" id="rw-total-used">0원</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎁 총 사용 금액</div></div>
+    <div><div style="font-family:'Black Han Sans',sans-serif;font-size:36px;color:var(--green);" id="rw-balance">0원</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🏦 잔액</div></div>
+    <div><div style="font-family:'Black Han Sans',sans-serif;font-size:36px;color:var(--blue);" id="rw-count">0</div><div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎰 총 추첨 횟수</div></div>
+  </div>
+
+  <!-- 추첨 섹션 -->
+  <div class="panel" style="margin-bottom:18px;">
+    <div class="ptitle" style="justify-content:space-between;">
+      <span><span class="dot"></span>🎰 러닝 로또 — 이번 주 추첨</span>
+      <div style="display:flex;gap:6px;">
+        <div class="week-tabs" id="lotto-week-tabs" style="margin:0;"></div>
+      </div>
+    </div>
+    <!-- 추첨권 현황 -->
+    <div id="lotto-tickets" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;"></div>
+    <!-- 추첨 버튼 -->
+    <div style="text-align:center;padding:16px 0;">
+      <div id="lotto-result" style="min-height:48px;margin-bottom:16px;"></div>
+      <button onclick="runLotto()" style="background:linear-gradient(135deg,var(--gold),var(--orange));border:none;color:white;font-family:'Black Han Sans',sans-serif;font-size:18px;padding:14px 40px;border-radius:12px;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px rgba(255,184,0,.3);">🎰 추첨하기!</button>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:10px;">10km→1장 · 20km→2장 · 30km→3장 (7km 선택자 제외)</div>
+    </div>
+    <!-- 추첨 기록 -->
+    <div id="lotto-history-list" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="main-grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- 회원별 누적 마일리지 -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>회원별 누적 마일리지</div>
+        <div id="rw-member-grid" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <!-- 마일리지 적립 내역 -->
+      <div class="panel">
+        <div class="ptitle"><span class="dot"></span>마일리지 적립 내역</div>
+        <div id="rw-history"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <!-- 수동 수여 -->
+      <div class="panel">
+        <div class="ptitle" style="justify-content:space-between;">
+          <span><span class="dot"></span>수동 마일리지 수여</span>
+          <button class="paid-btn" onclick="openAddReward()">+ 수여</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.8;">
+          • 추첨 외 특별 상황 시 직접 부여<br>
+          • 추첨 당첨 마일리지 5,000원 자동 적립<br>
+          • 누적 후 러닝 용품 교환 가능
+        </div>
+      </div>
+      <!-- 사용 내역 -->
+      <div class="panel">
+        <div class="ptitle" style="justify-content:space-between;">
+          <span><span class="dot"></span>마일리지 사용 내역</span>
+          <button class="paid-btn" onclick="openAddRewardExpense()">+ 추가</button>
+        </div>
+        <div id="rw-expense-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
 <!-- ADD EXPENSE MODAL -->
 <div class="overlay" id="expense-modal">
   <div class="modal">
@@ -421,6 +492,30 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
       </select>
     </div>
     <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddExpense()">취소</button><button class="mbtn-ok" onclick="submitExpense()">저장 ✓</button></div>
+  </div>
+</div>
+
+<!-- ADD REWARD MODAL -->
+<div class="overlay" id="reward-modal">
+  <div class="modal">
+    <div class="mtitle">🎖️ 상금 수여</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="rw-date"></div>
+    <div class="frow"><label class="flabel">수여 대상</label><select class="fselect" id="rw-member"><option value="">선택</option></select></div>
+    <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="rw-amount" placeholder="10000" min="0"></div>
+    <div class="frow"><label class="flabel">사유</label><input type="text" class="finput" id="rw-reason" placeholder="예: 이주의 러너, 최장거리 달성 등"></div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddReward()">취소</button><button class="mbtn-ok" onclick="submitReward()">수여 ✓</button></div>
+  </div>
+</div>
+
+<!-- ADD REWARD EXPENSE MODAL -->
+<div class="overlay" id="reward-expense-modal">
+  <div class="modal">
+    <div class="mtitle">🎁 상금 사용 내역</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="rwe-date"></div>
+    <div class="frow"><label class="flabel">내용</label><input type="text" class="finput" id="rwe-title" placeholder="예: 치킨 기프티콘, 스타벅스 상품권"></div>
+    <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="rwe-amount" placeholder="50000" min="0"></div>
+    <div class="frow"><label class="flabel">수령인</label><select class="fselect" id="rwe-member"><option value="전체">전체</option></select></div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddRewardExpense()">취소</button><button class="mbtn-ok" onclick="submitRewardExpense()">저장 ✓</button></div>
   </div>
 </div>
 
@@ -595,6 +690,7 @@ function switchPage(id,el){
   if(id==='total')renderTotal();
   if(id==='motivation')renderMotivation();
   if(id==='fine')renderFine();
+  if(id==='reward')renderReward();
 }
 
 // ── WEEKLY ──
@@ -1662,6 +1758,268 @@ function renderFine(){
     :expenses.map(e=>`<div class="expense-item"><div class="exp-icon">${catIcon[e.category]||'📦'}</div><div class="exp-info"><div class="exp-title">${e.title}</div><div class="exp-date">${e.date} · ${e.category}</div></div><div style="display:flex;align-items:center;gap:6px;"><div class="exp-amount">-${e.amount.toLocaleString()}원</div><button class="exp-del" onclick="deleteExpense(${e.id})">✕</button></div></div>`).join('');
 }
 
+// ── REWARD SYSTEM ──
+let rewards = [];
+let rewardExpenses = [];
+let lottoHistory = []; // {id, weekStart, winner, tickets, date}
+let lottoWeek = null;
+const LOTTO_PRIZE = 5000;
+
+function getTickets(memberId, weekStart){
+  // 7km 선택자는 제외
+  const mg = getMemberGoal(memberId, weekStart);
+  if(mg < 10) return 0;
+  const sun = getSunday(new Date(weekStart));
+  const dist = getDistInRange(memberId, weekStart, fmt(sun));
+  if(dist >= 30) return 3;
+  if(dist >= 20) return 2;
+  if(dist >= 10) return 1;
+  return 0;
+}
+
+function getLottoWeekStart(){
+  return lottoWeek || fmt(curMonday());
+}
+
+function renderLottoWeekTabs(){
+  const months = getAvailableMonths();
+  const curMon = fmt(curMonday());
+  const activeWeek = getLottoWeekStart();
+  // 현재 달 주차만
+  const weeks = getWeeksInMonth(curYM());
+  document.getElementById('lotto-week-tabs').innerHTML = weeks.map(w=>{
+    const wf = fmt(w);
+    return `<div class="wtab ${wf===activeWeek?'active':''}" onclick="selectLottoWeek('${wf}')">${fmtLabel(w)}${wf===curMon?' ★':''}</div>`;
+  }).join('');
+}
+
+function selectLottoWeek(ms){ lottoWeek = ms; renderReward(); }
+
+function runLotto(){
+  const weekStart = getLottoWeekStart();
+  // 이미 추첨했는지 확인
+  if(lottoHistory.some(h=>h.weekStart===weekStart)){
+    toast('⚠️ 이번 주는 이미 추첨했어요!'); return;
+  }
+  // 추첨권 풀 생성
+  const pool = [];
+  members.forEach(m=>{
+    const t = getTickets(m.id, weekStart);
+    for(let i=0;i<t;i++) pool.push(m.id);
+  });
+  if(pool.length === 0){ toast('😅 추첨권이 없어요! 10km 이상 달린 멤버가 없어요.'); return; }
+
+  // 애니메이션
+  const resultEl = document.getElementById('lotto-result');
+  let count = 0;
+  const interval = setInterval(()=>{
+    const rand = pool[Math.floor(Math.random()*pool.length)];
+    resultEl.innerHTML = `<div style="font-size:28px;font-weight:700;color:var(--gold);text-align:center;">${getInitial(members.find(m=>m.id===rand)||{name:'?',emoji:'',initial:''})} ${memberName(rand)}</div>`;
+    count++;
+    if(count >= 15){
+      clearInterval(interval);
+      // 최종 당첨자
+      const winner = pool[Math.floor(Math.random()*pool.length)];
+      const ticketMap = {};
+      members.forEach(m=>{ ticketMap[m.id] = getTickets(m.id, weekStart); });
+      lottoHistory.push({id:Date.now(), weekStart, winner, tickets:ticketMap, date:fmt(new Date())});
+      // 마일리지 자동 적립
+      rewards.push({id:Date.now()+1, member:winner, amount:LOTTO_PRIZE, reason:`🎰 러닝 로또 당첨 (${weekStart} 주)`, date:fmt(new Date())});
+      saveData();
+      resultEl.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-size:14px;color:var(--text-dim);margin-bottom:8px;">🎉 이번 주 당첨자</div>
+          <div style="font-size:32px;font-weight:700;color:var(--gold);margin-bottom:4px;">${avatarHtml(winner,40)} ${memberName(winner)}</div>
+          <div style="font-size:14px;color:var(--green);margin-top:8px;">+${LOTTO_PRIZE.toLocaleString()}원 마일리지 적립!</div>
+        </div>`;
+      renderReward();
+      toast(`🎰 ${memberName(winner)}님 당첨! ${LOTTO_PRIZE.toLocaleString()}원 적립!`);
+    }
+  }, 80);
+}
+
+function deleteLotto(id){
+  if(!confirm('추첨 기록을 삭제할까요? 마일리지도 함께 삭제돼요.')) return;
+  const lotto = lottoHistory.find(h=>h.id===id);
+  if(lotto){
+    rewards = rewards.filter(r=>!(r.member===lotto.winner&&r.reason&&r.reason.includes('러닝 로또')&&r.reason.includes(lotto.weekStart)));
+  }
+  lottoHistory = lottoHistory.filter(h=>h.id!==id);
+  saveData(); renderReward(); toast('🗑️ 삭제됐어요');
+}
+
+function renderReward(){
+  renderLottoWeekTabs();
+  const weekStart = getLottoWeekStart();
+
+  // 히어로
+  const totalPot = rewards.reduce((s,r)=>s+r.amount,0);
+  const totalUsed = rewardExpenses.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('rw-total-pot').textContent = totalPot.toLocaleString()+'원';
+  document.getElementById('rw-total-used').textContent = totalUsed.toLocaleString()+'원';
+  document.getElementById('rw-balance').textContent = (totalPot-totalUsed).toLocaleString()+'원';
+  document.getElementById('rw-count').textContent = lottoHistory.length;
+
+  // 추첨권 현황
+  const alreadyDrawn = lottoHistory.some(h=>h.weekStart===weekStart);
+  document.getElementById('lotto-tickets').innerHTML = members.map(m=>{
+    const t = getTickets(m.id, weekStart);
+    const mg = getMemberGoal(m.id, weekStart);
+    const sun = getSunday(new Date(weekStart));
+    const dist = getDistInRange(m.id, weekStart, fmt(sun));
+    const c = memberColor(m.id);
+    const is7km = mg < 10;
+    return `<div style="background:var(--dark3);border:1px solid ${t>0?'rgba(255,184,0,.3)':'var(--border)'};border-radius:10px;padding:12px;text-align:center;">
+      ${avatarHtml(m.id,32)}
+      <div style="font-size:12px;font-weight:700;margin:6px 0 4px;">${m.name}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">${dist.toFixed(1)}km</div>
+      ${is7km
+        ? `<div style="font-size:11px;color:var(--text-dim);">7km 선택 ❌</div>`
+        : `<div style="font-size:18px;">${'🎟️'.repeat(t)||'<span style="color:var(--text-dim);font-size:11px;">0장</span>'}</div>
+           <div style="font-size:10px;color:var(--text-dim);">${t}장</div>`}
+    </div>`;
+  }).join('');
+
+  // 추첨 결과 표시 (이미 추첨한 경우)
+  if(alreadyDrawn){
+    const drawn = lottoHistory.find(h=>h.weekStart===weekStart);
+    document.getElementById('lotto-result').innerHTML = `
+      <div style="text-align:center;">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">✅ 이번 주 추첨 완료</div>
+        <div style="font-size:20px;font-weight:700;color:var(--gold);">🎉 ${memberName(drawn.winner)} 당첨!</div>
+        <div style="font-size:11px;color:var(--green);margin-top:4px;">+${LOTTO_PRIZE.toLocaleString()}원 마일리지 적립</div>
+      </div>`;
+  } else {
+    document.getElementById('lotto-result').innerHTML = '';
+  }
+
+  // 추첨 기록
+  document.getElementById('lotto-history-list').innerHTML = !lottoHistory.length ? ''
+    : `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">추첨 기록</div>
+        ${[...lottoHistory].sort((a,b)=>b.date.localeCompare(a.date)).map(h=>`
+          <div class="expense-item">
+            <div class="exp-icon">🎰</div>
+            <div class="exp-info">
+              <div class="exp-title">${memberName(h.winner)} 당첨 🎉</div>
+              <div class="exp-date">${h.weekStart} 주 · ${h.date}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="font-size:13px;font-weight:700;color:var(--gold);">+${LOTTO_PRIZE.toLocaleString()}원</div>
+              <button class="exp-del" onclick="deleteLotto(${h.id})">✕</button>
+            </div>
+          </div>`).join('')}
+      </div>`;
+
+  // 회원별 누적
+  const memberTotals = {};
+  members.forEach(m=>{ memberTotals[m.id] = rewards.filter(r=>r.member===m.id).reduce((s,r)=>s+r.amount,0); });
+  const sorted = [...members].sort((a,b)=>memberTotals[b.id]-memberTotals[a.id]);
+  const maxAmt = Math.max(1,...Object.values(memberTotals));
+  document.getElementById('rw-member-grid').innerHTML = sorted.map((m,i)=>{
+    const amt = memberTotals[m.id];
+    const c = memberColor(m.id);
+    const medal = i===0&&amt>0?'👑 ':i===1&&amt>0?'🥈 ':i===2&&amt>0?'🥉 ':'';
+    const winCount = lottoHistory.filter(h=>h.winner===m.id).length;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dark3);border-radius:10px;border:1px solid ${amt>0?'rgba(255,184,0,.2)':'var(--border)'};">
+      ${avatarHtml(m.id,34)}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:5px;">${medal}${m.name} ${winCount>0?`<span style="font-size:10px;color:var(--gold);">🎰×${winCount}</span>`:''}</div>
+        <div style="height:5px;background:var(--dark4);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round((amt/maxAmt)*100)}%;background:var(--gold);border-radius:3px;"></div>
+        </div>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:var(--gold);white-space:nowrap;">${amt.toLocaleString()}원</div>
+    </div>`;
+  }).join('');
+
+  // 적립 내역
+  document.getElementById('rw-history').innerHTML = !rewards.length
+    ? '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">아직 적립 내역이 없어요</div>'
+    : [...rewards].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
+      <div class="expense-item">
+        <div class="exp-icon">${r.reason&&r.reason.includes('로또')?'🎰':'🎖️'}</div>
+        <div class="exp-info">
+          <div class="exp-title">${memberName(r.member)} · ${r.reason||'마일리지 수여'}</div>
+          <div class="exp-date">${r.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="font-size:15px;font-weight:700;color:var(--gold);">+${r.amount.toLocaleString()}원</div>
+          <button class="exp-del" onclick="deleteReward(${r.id})">✕</button>
+        </div>
+      </div>`).join('');
+
+  // 사용 내역
+  document.getElementById('rw-expense-list').innerHTML = !rewardExpenses.length
+    ? '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">사용 내역이 없어요</div>'
+    : [...rewardExpenses].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`
+      <div class="expense-item">
+        <div class="exp-icon">🎁</div>
+        <div class="exp-info">
+          <div class="exp-title">${e.title}</div>
+          <div class="exp-date">${e.date} · ${e.member==='전체'?'전체':memberName(e.member)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="exp-amount">-${e.amount.toLocaleString()}원</div>
+          <button class="exp-del" onclick="deleteRewardExpense(${e.id})">✕</button>
+        </div>
+      </div>`).join('');
+}
+
+function openAddReward(){
+  document.getElementById('rw-date').value = fmt(new Date());
+  document.getElementById('rw-member').innerHTML = '<option value="">선택</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('rw-amount').value = '';
+  document.getElementById('rw-reason').value = '';
+  document.getElementById('reward-modal').classList.add('show');
+}
+function closeAddReward(){ document.getElementById('reward-modal').classList.remove('show'); }
+function submitReward(){
+  const date = document.getElementById('rw-date').value;
+  const member = document.getElementById('rw-member').value;
+  const amount = parseInt(document.getElementById('rw-amount').value);
+  const reason = document.getElementById('rw-reason').value.trim();
+  if(!date||!member||!amount){ alert('날짜, 대상, 금액은 필수예요!'); return; }
+  rewards.push({id:Date.now(), member, amount, reason, date});
+  rewards.sort((a,b)=>b.date.localeCompare(a.date));
+  closeAddReward(); saveData(); renderReward();
+  toast(`🎖️ ${memberName(member)}에게 ${amount.toLocaleString()}원 수여됐어요!`);
+}
+function deleteReward(id){
+  if(!confirm('이 수여 내역을 삭제할까요?')) return;
+  rewards = rewards.filter(r=>r.id!==id);
+  saveData(); renderReward(); toast('🗑️ 삭제됐어요');
+}
+
+function openAddRewardExpense(){
+  document.getElementById('rwe-date').value = fmt(new Date());
+  document.getElementById('rwe-title').value = '';
+  document.getElementById('rwe-amount').value = '';
+  document.getElementById('rwe-member').innerHTML = '<option value="전체">전체</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('reward-expense-modal').classList.add('show');
+}
+function closeAddRewardExpense(){ document.getElementById('reward-expense-modal').classList.remove('show'); }
+function submitRewardExpense(){
+  const date = document.getElementById('rwe-date').value;
+  const title = document.getElementById('rwe-title').value.trim();
+  const amount = parseInt(document.getElementById('rwe-amount').value);
+  const member = document.getElementById('rwe-member').value;
+  if(!date||!title||!amount){ alert('날짜, 내용, 금액은 필수예요!'); return; }
+  rewardExpenses.push({id:Date.now(), date, title, amount, member});
+  rewardExpenses.sort((a,b)=>b.date.localeCompare(a.date));
+  closeAddRewardExpense(); saveData(); renderReward();
+  toast('🎁 사용 내역이 추가됐어요!');
+}
+function deleteRewardExpense(id){
+  if(!confirm('삭제할까요?')) return;
+  rewardExpenses = rewardExpenses.filter(e=>e.id!==id);
+  saveData(); renderReward(); toast('🗑️ 삭제됐어요');
+}
+
+['reward-modal','reward-expense-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+});
+
 function pickFineMonth(ym){fineWeekMonth=ym;fineWeek=null;renderFine();}
 function pickFineWeek(ms){fineWeek=new Date(ms);renderFine();}
 
@@ -1710,7 +2068,7 @@ const GS_URL = 'https://yujitae.ahsxj12.workers.dev';
 // ── 로컬 저장 (빠른 캐시용 + 사진 보관) ──
 function saveLocal(){
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks,weekOverrides}));
+    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks,weekOverrides,rewards,rewardExpenses,lottoHistory}));
   } catch(e){}
 }
 function loadLocal(){
@@ -1729,6 +2087,9 @@ function loadLocal(){
     if(d.absences) absences=d.absences;
     if(d.joinWeeks) joinWeeks=d.joinWeeks;
     if(d.weekOverrides) weekOverrides=d.weekOverrides;
+    if(d.rewards) rewards=d.rewards;
+    if(d.rewardExpenses) rewardExpenses=d.rewardExpenses;
+    if(d.lottoHistory) lottoHistory=d.lottoHistory;
     return true;
   } catch(e){ return false; }
 }
@@ -1736,7 +2097,7 @@ function loadLocal(){
 // ── Google Sheets 저장 ──
 async function saveToSheets(){
   try {
-    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks,weekOverrides};
+    const payload = {GOAL,members,nextId,logs,finePayments,expenses,FINE_AMOUNT,weeklyGoals,absences,joinWeeks,weekOverrides,rewards,rewardExpenses,lottoHistory};
     const res = await fetch(GS_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1769,6 +2130,9 @@ async function loadFromSheets(){
         if(d.absences) absences=d.absences;
         if(d.joinWeeks) joinWeeks=d.joinWeeks;
         if(d.weekOverrides) weekOverrides=d.weekOverrides;
+    if(d.rewards) rewards=d.rewards;
+    if(d.rewardExpenses) rewardExpenses=d.rewardExpenses;
+    if(d.lottoHistory) lottoHistory=d.lottoHistory;
         saveLocal();
         showSyncStatus('✅ 동기화 완료!', 2000);
       } else {
