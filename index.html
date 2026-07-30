@@ -1766,11 +1766,9 @@ let lottoWeek = null;
 const LOTTO_PRIZE = 5000;
 
 function getTickets(memberId, weekStart){
-  // 7km 선택자는 제외
-  const mg = getMemberGoal(memberId, weekStart);
-  if(mg < 10) return 0;
   const sun = getSunday(new Date(weekStart));
   const dist = getDistInRange(memberId, weekStart, fmt(sun));
+  // 7km 선택했어도 실제로 10km 이상 뛰면 추첨 참여 가능
   if(dist >= 30) return 3;
   if(dist >= 20) return 2;
   if(dist >= 10) return 1;
@@ -1873,8 +1871,11 @@ function renderReward(){
       ${avatarHtml(m.id,32)}
       <div style="font-size:12px;font-weight:700;margin:6px 0 4px;">${m.name}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">${dist.toFixed(1)}km</div>
-      ${is7km
-        ? `<div style="font-size:11px;color:var(--text-dim);">7km 선택 ❌</div>`
+      ${is7km && getTickets(m.id, weekStart) === 0
+        ? `<div style="font-size:11px;color:var(--text-dim);">7km 선택 · 미달성</div>`
+        : is7km && getTickets(m.id, weekStart) > 0
+        ? `<div style="font-size:18px;">${'🎟️'.repeat(getTickets(m.id, weekStart))}</div>
+           <div style="font-size:10px;color:var(--green);">${getTickets(m.id, weekStart)}장 (초과달성!)</div>`
         : `<div style="font-size:18px;">${'🎟️'.repeat(t)||'<span style="color:var(--text-dim);font-size:11px;">0장</span>'}</div>
            <div style="font-size:10px;color:var(--text-dim);">${t}장</div>`}
     </div>`;
@@ -2205,14 +2206,4 @@ const _origSubmitExpense = submitExpense;
 submitExpense = function(){ _origSubmitExpense(); saveData(); };
 
 const _origDeleteExpense = deleteExpense;
-deleteExpense = function(id){ _origDeleteExpense(id); saveData(); };
-
-const _origSaveFineAmount = saveFineAmount;
-saveFineAmount = function(){ _origSaveFineAmount(); saveData(); };
-
-// INIT
-updateStorageBtn();
-loadData();
-</script>
-</body>
-</html>
+deleteExpe
