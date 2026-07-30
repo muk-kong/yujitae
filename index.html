@@ -2206,4 +2206,14 @@ const _origSubmitExpense = submitExpense;
 submitExpense = function(){ _origSubmitExpense(); saveData(); };
 
 const _origDeleteExpense = deleteExpense;
-deleteExpe
+deleteExpense = function(id){ _origDeleteExpense(id); saveData(); };
+
+const _origSaveFineAmount = saveFineAmount;
+saveFineAmount = function(){ _origSaveFineAmount(); saveData(); };
+
+// INIT
+updateStorageBtn();
+loadData();
+</script>
+</body>
+</html>
