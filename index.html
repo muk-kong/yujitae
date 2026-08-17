@@ -403,8 +403,6 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
 </div>
 </div>
 
-</div>
-
 <!-- REWARD PAGE -->
 <div class="page" id="page-reward">
 <div class="container">
@@ -747,9 +745,13 @@ function renderWeekly(){
           ${avatarHtml(m.id,24)}
           <span style="font-size:12px;font-weight:700;">${m.name}</span>
         </div>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;align-items:center;">
           <button onclick="changeMemberGoal('${m.id}','${start}',${GOAL})" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mg===GOAL?'var(--orange)':'var(--border)'};background:${mg===GOAL?'rgba(255,77,28,.15)':'var(--dark4)'};color:${mg===GOAL?'var(--orange)':'var(--text-dim)'};">${GOAL}km</button>
           <button onclick="changeMemberGoal('${m.id}','${start}',7)" style="flex:1;padding:5px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mg===7?'var(--blue)':'var(--border)'};background:${mg===7?'rgba(41,121,255,.15)':'var(--dark4)'};color:${mg===7?'var(--blue)':'var(--text-dim)'};">7km</button>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;margin-top:6px;">
+          <input type="number" id="custom-goal-${m.id}" placeholder="직접입력" min="11" step="1" style="flex:1;background:var(--dark4);border:1px solid ${mg>GOAL?'var(--green)':'var(--border)'};border-radius:6px;padding:4px 8px;color:${mg>GOAL?'var(--green)':'var(--text)'};font-size:11px;outline:none;font-family:'Noto Sans KR',sans-serif;" value="${mg>GOAL?mg:''}">
+          <button onclick="applyCustomGoal('${m.id}','${start}')" style="padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1px solid ${mg>GOAL?'var(--green)':'var(--border)'};background:${mg>GOAL?'rgba(0,230,118,.15)':'var(--dark4)'};color:${mg>GOAL?'var(--green)':'var(--text-dim)'};">↑</button>
         </div>
       </div>`;
     }).join('');
@@ -1314,6 +1316,14 @@ function setWeekOverride(weekStart, km){
   }
   saveData();
   renderWeekly();
+}
+
+function applyCustomGoal(memberId, weekStart){
+  const input = document.getElementById('custom-goal-'+memberId);
+  const val = parseInt(input.value);
+  if(!val || val < 1){ toast('⚠️ 올바른 숫자를 입력해주세요'); return; }
+  if(val < GOAL){ toast(`⚠️ ${GOAL}km 이상 입력해주세요 (상향 전용)`); return; }
+  changeMemberGoal(memberId, weekStart, val);
 }
 
 function changeMemberGoal(memberId, weekStart, goal){
