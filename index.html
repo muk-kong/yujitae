@@ -156,6 +156,8 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
     <div class="goal-badge">주 목표 <b id="goal-badge-val">10km</b></div>
     <button class="hbtn hbtn-ghost" onclick="checkStorage()" id="storage-btn" style="font-size:11px;">💾 저장 확인</button>
     <button class="hbtn hbtn-green" onclick="exportCSV()">📥 내보내기</button>
+    <button class="hbtn hbtn-ghost" onclick="document.getElementById('csv-import').click()">📤 가져오기</button>
+    <input type="file" id="csv-import" accept=".csv" style="display:none;" onchange="importCSV(this)">
     <div style="position:relative;display:inline-block;">
       <button class="hbtn hbtn-ghost" onclick="toggleThemePicker()" id="theme-btn">🎨 테마</button>
       <div id="theme-picker" style="display:none;position:absolute;top:42px;right:0;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:14px;z-index:999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
@@ -1252,6 +1254,52 @@ function renderPaceChart(){
       interaction:{mode:'index',intersect:false}}});
 }
 function selectPaceMember(id){paceMemberId=id;renderPaceChart();}
+
+// ── IMPORT CSV ──
+function importCSV(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const text = e.target.result;
+      const lines = text.split('\n').filter(l=>l.trim());
+      const header = lines[0].split(',');
+      const newLogs = [];
+      for(let i=1;i<lines.length;i++){
+        const cols = lines[i].split(',');
+        if(cols.length < 3) continue;
+        const date = cols[0]?.trim();
+        const memberName_ = cols[1]?.trim();
+        const dist = parseFloat(cols[2]?.trim());
+        const pace = cols[3]?.trim()||'-';
+        const type = cols[4]?.trim()||'실외';
+        const weather = cols[5]?.trim()||'맑음';
+        const shoe = cols[6]?.trim()||'-';
+        if(!date||!memberName_||isNaN(dist)) continue;
+        // 회원 이름으로 ID 찾기
+        const member = members.find(m=>m.name===memberName_);
+        if(!member) continue;
+        // 중복 체크 (같은 날짜+회원+거리)
+        const isDup = logs.some(l=>l.date===date&&l.member===member.id&&l.dist===dist);
+        if(!isDup) newLogs.push({date, member:member.id, dist, pace, type, weather, shoe});
+      }
+      if(!newLogs.length){
+        toast('⚠️ 새로 추가할 기록이 없어요 (중복 제거됨)');
+        input.value='';
+        return;
+      }
+      logs = [...logs, ...newLogs].sort((a,b)=>a.date.localeCompare(b.date));
+      saveData();
+      renderWeekly();
+      toast(`✅ ${newLogs.length}개 기록이 추가됐어요!`);
+    } catch(err) {
+      alert('CSV 파일 읽기 오류: '+err.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
 
 // ── EXPORT CSV ──
 function exportCSV(){
