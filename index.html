@@ -1789,18 +1789,25 @@ function getLottoWeekStart(){
   return lottoWeek || fmt(curMonday());
 }
 
+let lottoWeekMonth = null;
+
 function renderLottoWeekTabs(){
+  if(!lottoWeekMonth) lottoWeekMonth = curYM();
   const months = getAvailableMonths();
   const curMon = fmt(curMonday());
   const activeWeek = getLottoWeekStart();
-  // 현재 달 주차만
-  const weeks = getWeeksInMonth(curYM());
-  document.getElementById('lotto-week-tabs').innerHTML = weeks.map(w=>{
+  const monthTabs = months.map(ym=>
+    `<div class="wtab ${ym===lottoWeekMonth?'active':''}" style="font-weight:700;" onclick="pickLottoMonth('${ym}')">${parseInt(ym.slice(5))}월${ym===curYM()?' ★':''}</div>`
+  ).join('');
+  const weeks = getWeeksInMonth(lottoWeekMonth);
+  const weekTabs = weeks.map(w=>{
     const wf = fmt(w);
     return `<div class="wtab ${wf===activeWeek?'active':''}" onclick="selectLottoWeek('${wf}')">${fmtLabel(w)}${wf===curMon?' ★':''}</div>`;
   }).join('');
+  document.getElementById('lotto-week-tabs').innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;"><div class="week-tabs" style="margin:0;">${monthTabs}</div><div class="week-tabs" style="margin:0;">${weekTabs}</div></div>`;
 }
 
+function pickLottoMonth(ym){ lottoWeekMonth=ym; lottoWeek=null; renderReward(); }
 function selectLottoWeek(ms){ lottoWeek = ms; renderReward(); }
 
 function runLotto(){
@@ -2127,9 +2134,10 @@ async function loadFromSheets(){
     const json = await res.json();
     if(json.ok && json.data && json.data[0] && json.data[0][0] && json.data[0][0]!==''){
       const d = JSON.parse(json.data[0][0]);
-      const sheetLogCount = (d.logs||[]).length;
-      const localLogCount = logs.length;
-      if(sheetLogCount >= localLogCount){
+      // 최신 기록 날짜 기준으로 비교 (더 최근 데이터 우선)
+      const sheetLatest = (d.logs||[]).length ? (d.logs||[]).reduce((a,b)=>a.date>b.date?a:b).date : '';
+      const localLatest = logs.length ? logs.reduce((a,b)=>a.date>b.date?a:b).date : '';
+      if(sheetLatest >= localLatest){
         if(d.GOAL) GOAL=d.GOAL;
         if(d.members) members=d.members;
         if(d.nextId) nextId=d.nextId;
@@ -2141,12 +2149,13 @@ async function loadFromSheets(){
         if(d.absences) absences=d.absences;
         if(d.joinWeeks) joinWeeks=d.joinWeeks;
         if(d.weekOverrides) weekOverrides=d.weekOverrides;
-    if(d.rewards) rewards=d.rewards;
-    if(d.rewardExpenses) rewardExpenses=d.rewardExpenses;
-    if(d.lottoHistory) lottoHistory=d.lottoHistory;
+        if(d.rewards) rewards=d.rewards;
+        if(d.rewardExpenses) rewardExpenses=d.rewardExpenses;
+        if(d.lottoHistory) lottoHistory=d.lottoHistory;
         saveLocal();
         showSyncStatus('✅ 동기화 완료!', 2000);
       } else {
+        // 로컬이 더 최신 → 시트에 업로드
         showSyncStatus('📤 로컬→시트 업로드 중...', 0);
         await saveToSheets();
         showSyncStatus('✅ 업로드 완료!', 2000);
