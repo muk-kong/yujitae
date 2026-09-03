@@ -155,9 +155,12 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
   <div class="header-right">
     <div class="goal-badge">주 목표 <b id="goal-badge-val">10km</b></div>
     <button class="hbtn hbtn-ghost" onclick="checkStorage()" id="storage-btn" style="font-size:11px;">💾 저장 확인</button>
-    <button class="hbtn hbtn-green" onclick="exportCSV()">📥 내보내기</button>
-    <button class="hbtn hbtn-ghost" onclick="document.getElementById('csv-import').click()">📤 가져오기</button>
+    <button class="hbtn hbtn-green" onclick="exportCSV()">📥 CSV</button>
+    <button class="hbtn hbtn-green" onclick="exportBackup()">💾 백업</button>
+    <button class="hbtn hbtn-ghost" onclick="document.getElementById('csv-import').click()">📤 CSV가져오기</button>
+    <button class="hbtn hbtn-ghost" onclick="document.getElementById('backup-import').click()">📦 백업복원</button>
     <input type="file" id="csv-import" accept=".csv" style="display:none;" onchange="importCSV(this)">
+    <input type="file" id="backup-import" accept=".json" style="display:none;" onchange="importBackup(this)">
     <div style="position:relative;display:inline-block;">
       <button class="hbtn hbtn-ghost" onclick="toggleThemePicker()" id="theme-btn">🎨 테마</button>
       <div id="theme-picker" style="display:none;position:absolute;top:42px;right:0;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:14px;z-index:999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
@@ -1254,6 +1257,58 @@ function renderPaceChart(){
       interaction:{mode:'index',intersect:false}}});
 }
 function selectPaceMember(id){paceMemberId=id;renderPaceChart();}
+
+// ── BACKUP / RESTORE ──
+function exportBackup(){
+  const data = {
+    GOAL, members, nextId, logs,
+    finePayments, expenses, FINE_AMOUNT,
+    weeklyGoals, absences, joinWeeks,
+    weekOverrides, rewards, rewardExpenses, lottoHistory,
+    _backup_date: fmt(new Date()),
+    _version: 2
+  };
+  const json = JSON.stringify(data, null, 2);
+  const a = document.createElement('a');
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  a.download = `유지태_백업_${fmt(new Date())}.json`;
+  a.click();
+  toast('💾 전체 백업 파일이 다운로드됐어요!');
+}
+
+function importBackup(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(!confirm('⚠️ 백업 파일로 복원하면 현재 데이터가 덮어써져요!\n계속할까요?')){input.value='';return;}
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const d = JSON.parse(e.target.result);
+      if(!d.logs || !d.members){ alert('올바른 백업 파일이 아니에요!'); return; }
+      if(d.GOAL) GOAL=d.GOAL;
+      if(d.members) members=d.members;
+      if(d.nextId) nextId=d.nextId;
+      if(d.logs) logs=d.logs;
+      if(d.finePayments) finePayments=d.finePayments;
+      if(d.expenses) expenses=d.expenses;
+      if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
+      if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
+      if(d.absences) absences=d.absences;
+      if(d.joinWeeks) joinWeeks=d.joinWeeks;
+      if(d.weekOverrides) weekOverrides=d.weekOverrides;
+      if(d.rewards) rewards=d.rewards;
+      if(d.rewardExpenses) rewardExpenses=d.rewardExpenses;
+      if(d.lottoHistory) lottoHistory=d.lottoHistory;
+      saveData();
+      renderWeekly();
+      toast(`✅ 백업 복원 완료! (${d._backup_date||'날짜 없음'} 백업)`);
+    } catch(err) {
+      alert('백업 파일 읽기 오류: ' + err.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
 
 // ── IMPORT CSV ──
 function importCSV(input){
