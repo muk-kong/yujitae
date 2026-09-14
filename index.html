@@ -344,10 +344,10 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
 <div class="page" id="page-ledger">
 <div class="container">
 
-  <!-- 히어로 -->
+  <!-- 히어로 (벌금만) -->
   <div class="fine-hero">
-    <div class="fine-hero-item"><div class="fh-val" id="f-total-pot" style="color:var(--gold)">0원</div><div class="fh-label">💰 총 수입</div></div>
-    <div class="fine-hero-item"><div class="fh-val" id="f-total-spent" style="color:var(--orange)">0원</div><div class="fh-label">💸 총 지출</div></div>
+    <div class="fine-hero-item"><div class="fh-val" id="f-total-pot" style="color:var(--gold)">0원</div><div class="fh-label">💸 벌금 수입</div></div>
+    <div class="fine-hero-item"><div class="fh-val" id="f-total-spent" style="color:var(--orange)">0원</div><div class="fh-label">🎁 지출</div></div>
     <div class="fine-hero-item"><div class="fh-val" id="f-balance" style="color:var(--green)">0원</div><div class="fh-label">🏦 잔액</div></div>
   </div>
 
@@ -357,18 +357,25 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
     <div id="fine-king-section" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
   </div>
 
-  <!-- 회원별 마일리지 -->
+  <!-- 마일리지 -->
   <div class="panel" style="margin-bottom:18px;">
-    <div class="ptitle"><span class="dot"></span>🏅 회원별 누적 상금</div>
-    <div id="rw-member-grid" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div class="ptitle" style="justify-content:space-between;">
+      <span><span class="dot"></span>🏅 회원별 마일리지</span>
+      <div style="display:flex;gap:6px;">
+        <button class="paid-btn" onclick="openAddMileageEarn()">+ 적립</button>
+        <button class="paid-btn" style="background:rgba(255,77,28,.15);border-color:rgba(255,77,28,.3);color:var(--orange);" onclick="openAddMileageUse()">- 사용</button>
+      </div>
+    </div>
+    <div id="mileage-member-grid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+    <div id="mileage-history" style="display:flex;flex-direction:column;gap:6px;"></div>
   </div>
 
   <div class="main-grid">
     <div style="display:flex;flex-direction:column;gap:16px;">
       <div class="panel">
         <div class="ptitle" style="justify-content:space-between;">
-          <span><span class="dot"></span>💰 수입 내역</span>
-          <button class="paid-btn" onclick="openAddIncome()">+ 수입 추가</button>
+          <span><span class="dot"></span>💰 벌금 수입 내역</span>
+          <button class="paid-btn" onclick="openAddIncome()">+ 추가</button>
         </div>
         <div id="income-list"></div>
       </div>
@@ -377,13 +384,37 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
       <div class="panel">
         <div class="ptitle" style="justify-content:space-between;">
           <span><span class="dot"></span>💸 지출 내역</span>
-          <button class="paid-btn" onclick="openAddSpend()">+ 지출 추가</button>
+          <button class="paid-btn" onclick="openAddSpend()">+ 추가</button>
         </div>
         <div id="spend-list"></div>
       </div>
     </div>
   </div>
 </div>
+</div>
+
+<!-- ADD MILEAGE EARN MODAL -->
+<div class="overlay" id="mileage-earn-modal">
+  <div class="modal">
+    <div class="mtitle">🏅 마일리지 적립</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="me-date"></div>
+    <div class="frow"><label class="flabel">회원</label><select class="fselect" id="me-member"><option value="">선택</option></select></div>
+    <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="me-amount" placeholder="5000" min="0"></div>
+    <div class="frow"><label class="flabel">사유</label><input type="text" class="finput" id="me-reason" placeholder="예: 로또 당첨, 이주의 러너"></div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddMileageEarn()">취소</button><button class="mbtn-ok" onclick="submitMileageEarn()">적립 ✓</button></div>
+  </div>
+</div>
+
+<!-- ADD MILEAGE USE MODAL -->
+<div class="overlay" id="mileage-use-modal">
+  <div class="modal">
+    <div class="mtitle" style="color:var(--orange);">🎁 마일리지 사용</div>
+    <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="mu-date"></div>
+    <div class="frow"><label class="flabel">회원</label><select class="fselect" id="mu-member"><option value="">선택</option></select></div>
+    <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="mu-amount" placeholder="15000" min="0"></div>
+    <div class="frow"><label class="flabel">내용</label><input type="text" class="finput" id="mu-reason" placeholder="예: 러닝화 구매, 기프티콘"></div>
+    <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddMileageUse()">취소</button><button class="mbtn-ok" style="background:var(--orange);" onclick="submitMileageUse()">사용 ✓</button></div>
+  </div>
 </div>
 
 <!-- ADD INCOME MODAL -->
@@ -1618,6 +1649,128 @@ function saveSettings(){
 // CLOSE ON BACKDROP
 ['add-modal','edit-modal','settings-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});});
 
+// ── 마일리지 시스템 ──
+let mileageEarn = [];  // {id, date, member, amount, reason}
+let mileageUse = [];   // {id, date, member, amount, reason}
+
+function getMemberMileage(memberId){
+  const earned = mileageEarn.filter(m=>m.member===memberId).reduce((s,m)=>s+m.amount,0);
+  const used = mileageUse.filter(m=>m.member===memberId).reduce((s,m)=>s+m.amount,0);
+  return { earned, used, balance: earned - used };
+}
+
+function renderMileage(){
+  // 회원별 마일리지 막대
+  const grid = document.getElementById('mileage-member-grid');
+  if(!grid) return;
+  const hasData = members.some(m=>getMemberMileage(m.id).earned > 0);
+  if(!hasData){
+    grid.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px">아직 마일리지 내역이 없어요</div>';
+  } else {
+    const maxEarned = Math.max(1, ...members.map(m=>getMemberMileage(m.id).earned));
+    grid.innerHTML = members
+      .map(m=>({ m, ...getMemberMileage(m.id) }))
+      .filter(x=>x.earned>0)
+      .sort((a,b)=>b.balance-a.balance)
+      .map((x,i)=>{
+        const pct = Math.round((x.balance/x.earned)*100);
+        const medal = i===0?'👑 ':i===1?'🥈 ':i===2?'🥉 ':'';
+        const c = memberColor(x.m.id);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dark3);border-radius:10px;border:1px solid ${x.balance>0?'rgba(255,184,0,.2)':'var(--border)'};">
+          ${avatarHtml(x.m.id,34)}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${medal}${x.m.name}</div>
+            <div style="position:relative;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;margin-bottom:3px;">
+              <div style="position:absolute;height:100%;width:${Math.round((x.earned/maxEarned)*100)}%;background:var(--gold);opacity:.3;border-radius:3px;"></div>
+              <div style="position:absolute;height:100%;width:${Math.round((x.balance/maxEarned)*100)}%;background:var(--gold);border-radius:3px;transition:width .8s;"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-dim);">적립 ${x.earned.toLocaleString()}원 · 사용 ${x.used.toLocaleString()}원</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:700;color:${x.balance>0?'var(--gold)':'var(--text-dim)'};">${x.balance.toLocaleString()}원</div>
+            <div style="font-size:10px;color:var(--text-dim);">잔여</div>
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  // 마일리지 내역
+  const history = document.getElementById('mileage-history');
+  if(!history) return;
+  const all = [
+    ...mileageEarn.map(m=>({...m, type:'earn'})),
+    ...mileageUse.map(m=>({...m, type:'use'}))
+  ].sort((a,b)=>b.date.localeCompare(a.date));
+  history.innerHTML = !all.length ? '' : all.map(h=>`
+    <div class="expense-item">
+      <div class="exp-icon">${h.type==='earn'?'⭐':'🎁'}</div>
+      <div class="exp-info">
+        <div class="exp-title">${memberName(h.member)} · ${h.reason||''}</div>
+        <div class="exp-date">${h.date}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="font-size:14px;font-weight:700;color:${h.type==='earn'?'var(--gold)':'var(--orange)'};">${h.type==='earn'?'+':'-'}${h.amount.toLocaleString()}원</div>
+        <button class="exp-del" onclick="${h.type==='earn'?`deleteMileageEarn(${h.id})`:`deleteMileageUse(${h.id})`}">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function openAddMileageEarn(){
+  document.getElementById('me-date').value = fmt(new Date());
+  document.getElementById('me-member').innerHTML = '<option value="">선택</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('me-amount').value = '';
+  document.getElementById('me-reason').value = '';
+  document.getElementById('mileage-earn-modal').classList.add('show');
+}
+function closeAddMileageEarn(){ document.getElementById('mileage-earn-modal').classList.remove('show'); }
+function submitMileageEarn(){
+  const date=document.getElementById('me-date').value;
+  const member=document.getElementById('me-member').value;
+  const amount=parseInt(document.getElementById('me-amount').value);
+  const reason=document.getElementById('me-reason').value.trim();
+  if(!date||!member||!amount){ alert('날짜, 회원, 금액은 필수예요!'); return; }
+  mileageEarn.push({id:Date.now(),date,member,amount,reason});
+  mileageEarn.sort((a,b)=>b.date.localeCompare(a.date));
+  closeAddMileageEarn(); saveData(); renderFine();
+  toast(`⭐ ${memberName(member)} 마일리지 ${amount.toLocaleString()}원 적립!`);
+}
+function deleteMileageEarn(id){
+  if(!confirm('삭제할까요?'))return;
+  mileageEarn=mileageEarn.filter(m=>m.id!==id);
+  saveData(); renderFine(); toast('🗑️ 삭제됐어요');
+}
+
+function openAddMileageUse(){
+  document.getElementById('mu-date').value = fmt(new Date());
+  document.getElementById('mu-member').innerHTML = '<option value="">선택</option>'+members.map(m=>`<option value="${m.id}">${m.name} (잔여 ${getMemberMileage(m.id).balance.toLocaleString()}원)</option>`).join('');
+  document.getElementById('mu-amount').value = '';
+  document.getElementById('mu-reason').value = '';
+  document.getElementById('mileage-use-modal').classList.add('show');
+}
+function closeAddMileageUse(){ document.getElementById('mileage-use-modal').classList.remove('show'); }
+function submitMileageUse(){
+  const date=document.getElementById('mu-date').value;
+  const member=document.getElementById('mu-member').value;
+  const amount=parseInt(document.getElementById('mu-amount').value);
+  const reason=document.getElementById('mu-reason').value.trim();
+  if(!date||!member||!amount){ alert('날짜, 회원, 금액은 필수예요!'); return; }
+  const balance=getMemberMileage(member).balance;
+  if(amount>balance){ if(!confirm(`잔여 마일리지(${balance.toLocaleString()}원)보다 많아요. 계속할까요?`)) return; }
+  mileageUse.push({id:Date.now(),date,member,amount,reason});
+  mileageUse.sort((a,b)=>b.date.localeCompare(a.date));
+  closeAddMileageUse(); saveData(); renderFine();
+  toast(`🎁 ${memberName(member)} 마일리지 ${amount.toLocaleString()}원 사용!`);
+}
+function deleteMileageUse(id){
+  if(!confirm('삭제할까요?'))return;
+  mileageUse=mileageUse.filter(m=>m.id!==id);
+  saveData(); renderFine(); toast('🗑️ 삭제됐어요');
+}
+
+['mileage-earn-modal','mileage-use-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+});
+
 // ── 가계부 (벌금 관리) ──
 let ledgerIncome = [];  // {id, date, title, amount, category, member}
 let ledgerSpend = [];   // {id, date, title, amount, category}
@@ -1636,40 +1789,17 @@ function renderFine(){
   // 벌금왕 — 벌금 분류 수입 중 납부자 기준
   renderFineKing();
 
-  // 회원별 누적 상금 (상금 분류 수입 기준)
-  const memberRewardTotals = {};
-  members.forEach(m=>{ memberRewardTotals[m.id] = ledgerIncome.filter(r=>r.category==='상금'&&r.member===m.id).reduce((s,r)=>s+r.amount,0); });
-  const rewardSorted = [...members].filter(m=>memberRewardTotals[m.id]>0).sort((a,b)=>memberRewardTotals[b.id]-memberRewardTotals[a.id]);
-  const maxAmt = Math.max(1,...rewardSorted.map(m=>memberRewardTotals[m.id]));
-  const rwGrid = document.getElementById('rw-member-grid');
-  if(rwGrid){
-    rwGrid.innerHTML = !rewardSorted.length
-      ? '<div style="color:var(--text-dim);font-size:12px;padding:8px">아직 상금 내역이 없어요</div>'
-      : rewardSorted.map((m,i)=>{
-        const amt = memberRewardTotals[m.id];
-        const medal = i===0?'👑 ':i===1?'🥈 ':i===2?'🥉 ':'';
-        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dark3);border-radius:10px;border:1px solid rgba(255,184,0,.2);">
-          ${avatarHtml(m.id,34)}
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;margin-bottom:5px;">${medal}${m.name}</div>
-            <div style="height:5px;background:var(--dark4);border-radius:3px;overflow:hidden;">
-              <div style="height:100%;width:${Math.round((amt/maxAmt)*100)}%;background:var(--gold);border-radius:3px;"></div>
-            </div>
-          </div>
-          <div style="font-size:16px;font-weight:700;color:var(--gold);white-space:nowrap;">${amt.toLocaleString()}원</div>
-        </div>`;
-      }).join('');
-  }
+  // 마일리지
+  renderMileage();
 
-  // 수입 내역
+  // 수입 내역 (벌금만)
   const incList = document.getElementById('income-list'); if(!incList) return;
-  const catIcon = {벌금:'💸',상금:'🏆',기타:'📦'};
   const sortedInc = [...ledgerIncome].sort((a,b)=>b.date.localeCompare(a.date));
   incList.innerHTML = !sortedInc.length
     ? '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">수입 내역이 없어요</div>'
     : sortedInc.map(r=>`
       <div class="expense-item">
-        <div class="exp-icon">${catIcon[r.category]||'📦'}</div>
+        <div class="exp-icon">💸</div>
         <div class="exp-info">
           <div class="exp-title">${r.title}${r.member?` · <span style="color:var(--text-dim);font-size:10px;">${memberName(r.member)}</span>`:''}</div>
           <div class="exp-date">${r.date} · ${r.category}</div>
@@ -1877,7 +2007,7 @@ const GS_URL = 'https://yujitae.ahsxj12.workers.dev';
 // ── 로컬 저장 (빠른 캐시용 + 사진 보관) ──
 function saveLocal(){
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,ledgerIncome,ledgerSpend,weeklyGoals,absences,joinWeeks,weekOverrides}));
+    localStorage.setItem(LS_KEY, JSON.stringify({GOAL,members,nextId,logs,ledgerIncome,ledgerSpend,mileageEarn,mileageUse,weeklyGoals,absences,joinWeeks,weekOverrides}));
   } catch(e){}
 }
 function loadLocal(){
@@ -1891,6 +2021,8 @@ function loadLocal(){
     if(d.logs) logs=d.logs;
     if(d.ledgerIncome) ledgerIncome=d.ledgerIncome;
     if(d.ledgerSpend) ledgerSpend=d.ledgerSpend;
+    if(d.mileageEarn) mileageEarn=d.mileageEarn;
+    if(d.mileageUse) mileageUse=d.mileageUse;
     // 기존 데이터 마이그레이션
     // 기존 데이터 마이그레이션
     if(!d.ledgerIncome && d.finePayments) ledgerIncome=(d.finePayments||[]).map(p=>({id:p.id,date:p.paidAt||p.date||'2026-01-01',title:'벌금 납부',amount:p.amount,category:'벌금',member:p.member}));
@@ -1906,7 +2038,7 @@ function loadLocal(){
 // ── Google Sheets 저장 ──
 async function saveToSheets(){
   try {
-    const payload = {GOAL,members,nextId,logs,ledgerIncome,ledgerSpend,weeklyGoals,absences,joinWeeks,weekOverrides};
+    const payload = {GOAL,members,nextId,logs,ledgerIncome,ledgerSpend,mileageEarn,mileageUse,weeklyGoals,absences,joinWeeks,weekOverrides};
     const res = await fetch(GS_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1935,6 +2067,8 @@ async function loadFromSheets(){
         if(d.logs) logs=d.logs;
         if(d.ledgerIncome) ledgerIncome=d.ledgerIncome;
         if(d.ledgerSpend) ledgerSpend=d.ledgerSpend;
+    if(d.mileageEarn) mileageEarn=d.mileageEarn;
+    if(d.mileageUse) mileageUse=d.mileageUse;
         if(!d.ledgerIncome && d.finePayments) ledgerIncome=(d.finePayments||[]).map(p=>({id:p.id,date:p.paidAt||p.date||'2024-01-01',title:'벌금 납부',amount:p.amount,category:'벌금',member:p.member}));
         if(!d.ledgerSpend && d.expenses) ledgerSpend=d.expenses||[];
         if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
