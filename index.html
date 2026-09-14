@@ -1371,7 +1371,6 @@ function openEditLog(idx){
   document.getElementById('e-pace').value=l.pace==='-'?'':l.pace;
   document.getElementById('e-type').value=l.type;
   document.getElementById('e-weather').value=l.weather;
-  document.getElementById('e-shoe').value=l.shoe==='-'?'':l.shoe;
   document.getElementById('edit-modal').classList.add('show');
 }
 function closeEditLog(){document.getElementById('edit-modal').classList.remove('show');editingIdx=null;}
@@ -1379,9 +1378,9 @@ function submitEdit(){
   if(editingIdx===null)return;
   const date=document.getElementById('e-date').value,member=document.getElementById('e-member').value;
   const dist=parseFloat(document.getElementById('e-dist').value),pace=document.getElementById('e-pace').value;
-  const type=document.getElementById('e-type').value,weather=document.getElementById('e-weather').value,shoe=document.getElementById('e-shoe').value;
+  const type=document.getElementById('e-type').value,weather=document.getElementById('e-weather').value;
   if(!date||!member||!dist){alert('날짜, 회원, 거리는 필수!');return;}
-  logs[editingIdx]={...logs[editingIdx],date,member,dist,pace:pace||'-',type,weather,shoe:shoe||'-'};
+  logs[editingIdx]={...logs[editingIdx],date,member,dist,pace:pace||'-',type,weather};
   logs.sort((a,b)=>a.date.localeCompare(b.date));
   closeEditLog();renderWeekly();toast('✅ 기록이 수정됐어요!');
 }
@@ -1397,13 +1396,13 @@ function openAddLog(){
   document.getElementById('f-member').innerHTML='<option value="">선택</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   document.getElementById('add-modal').classList.add('show');
 }
-function closeAddLog(){document.getElementById('add-modal').classList.remove('show');['f-member','f-dist','f-pace','f-shoe'].forEach(id=>document.getElementById(id).value='');}
+function closeAddLog(){document.getElementById('add-modal').classList.remove('show');['f-member','f-dist','f-pace'].forEach(id=>document.getElementById(id).value='');}
 function submitLog(){
   const date=document.getElementById('f-date').value,member=document.getElementById('f-member').value;
   const dist=parseFloat(document.getElementById('f-dist').value),pace=document.getElementById('f-pace').value;
-  const type=document.getElementById('f-type').value,weather=document.getElementById('f-weather').value,shoe=document.getElementById('f-shoe').value;
+  const type=document.getElementById('f-type').value,weather=document.getElementById('f-weather').value;
   if(!date||!member||!dist){alert('날짜, 회원, 거리는 필수!');return;}
-  logs.push({date,member,dist,pace:pace||'-',type,weather,shoe:shoe||'-'});
+  logs.push({date,member,dist,pace:pace||'-',type,weather});
   logs.sort((a,b)=>a.date.localeCompare(b.date));
   closeAddLog();renderWeekly();toast('✅ 기록이 추가됐어요!');
 }
@@ -1732,7 +1731,7 @@ function saveSettings(){
 }
 
 // CLOSE ON BACKDROP
-['add-modal','edit-modal','settings-modal','expense-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});});
+['add-modal','edit-modal','settings-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});});
 
 // ── 가계부 (벌금 관리) ──
 let ledgerIncome = [];  // {id, date, title, amount, category, member}
@@ -1920,8 +1919,6 @@ function markPaid(memberId,weekStart){
   toast(`✅ ${memberName(memberId)} 납부 완료!`);renderFine();
 }
 
-function openAddExpense(){document.getElementById('exp-date').value=fmt(new Date());document.getElementById('exp-title').value='';document.getElementById('exp-amount').value='';document.getElementById('expense-modal').classList.add('show');}
-function closeAddExpense(){document.getElementById('expense-modal').classList.remove('show');}
 function submitExpense(){
   const date=document.getElementById('exp-date').value,title=document.getElementById('exp-title').value.trim();
   const amount=parseInt(document.getElementById('exp-amount').value),category=document.getElementById('exp-category').value;
@@ -2542,14 +2539,9 @@ markPaid = function(m,w){ _origMarkPaid(m,w); saveData(); };
 const _origCancelPayment = cancelPayment;
 cancelPayment = function(id){ _origCancelPayment(id); saveData(); };
 
-const _origSubmitExpense = submitExpense;
-submitExpense = function(){ _origSubmitExpense(); saveData(); };
-
 const _origDeleteExpense = deleteExpense;
 deleteExpense = function(id){ _origDeleteExpense(id); saveData(); };
 
-const _origSaveFineAmount = saveFineAmount;
-saveFineAmount = function(){ _origSaveFineAmount(); saveData(); };
 
 // INIT
 updateStorageBtn();
