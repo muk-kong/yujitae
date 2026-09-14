@@ -1800,21 +1800,11 @@ function removeAbsence(memberId, weekStart){
 function renderFineKing(){
   const stats = members.map(m => {
     const totalPaid = ledgerIncome.filter(r=>r.category==='벌금'&&r.member===m.id).reduce((s,r)=>s+r.amount,0);
-    const allWeeks = getAllPastWeeks();
-    let totalFined = 0, missWeeks = 0;
-    allWeeks.forEach(wStart=>{
-      const joinWeek=getMemberJoinWeek(m.id);
-      if(!joinWeek||wStart<joinWeek)return;
-      if(isAbsent(m.id,wStart))return;
-      const sun=getSunday(new Date(wStart));
-      const mg=getMemberGoal(m.id,wStart);
-      if(getDistInRange(m.id,wStart,fmt(sun))<mg){ totalFined+=5000; missWeeks++; }
-    });
-    return { ...m, missWeeks, totalFined, totalPaid, unpaid: Math.max(0,totalFined-totalPaid) };
+    return { ...m, totalPaid };
   }).filter(m=>m.totalPaid>0).sort((a,b)=>b.totalPaid-a.totalPaid);
 
   const el=document.getElementById('fine-king-section');
-  if(!stats.length){el.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:8px">아직 납부 내역이 없어요 🎉</div>';return;}
+  if(!stats.length){el.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:8px">아직 벌금 납부 내역이 없어요</div>';return;}
   const medals=['👑','🥈','🥉'];
   const colors=['rgba(255,184,0,.15)','rgba(192,192,192,.1)','rgba(205,127,50,.1)'];
   const borderColors=['rgba(255,184,0,.5)','rgba(192,192,192,.3)','rgba(205,127,50,.3)'];
@@ -1825,11 +1815,7 @@ function renderFineKing(){
       ${avatarHtml(m.id,42)}
       <div style="font-size:15px;font-weight:700;margin:8px 0 4px">${m.name}</div>
       <div style="font-size:22px;font-weight:700;color:${textColors[i]}">${m.totalPaid.toLocaleString()}원</div>
-      <div style="font-size:10px;color:var(--text-dim);margin-top:4px">납부 완료</div>
-      <div style="font-size:10px;margin-top:6px;">
-        <span style="color:var(--text-dim)">${m.missWeeks}주 미달성</span>
-        ${m.unpaid>0?`<span style="color:var(--orange);margin-left:6px">미납 ${m.unpaid.toLocaleString()}원</span>`:`<span style="color:var(--green);margin-left:6px">✅ 완납</span>`}
-      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:4px">누적 납부</div>
     </div>`).join('');
 }
 
