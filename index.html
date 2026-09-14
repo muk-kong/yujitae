@@ -425,11 +425,6 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
     <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddSpend()">취소</button><button class="mbtn-ok" onclick="submitSpend()">저장 ✓</button></div>
   </div>
 </div>
-
-<!-- ADD REWARD MODAL -->
-<div class="overlay" id="reward-modal">
-  <div class="modal">
-    <div class="mtitle">🎖️ 상금 수여</div>
     <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="rw-date"></div>
     <div class="frow"><label class="flabel">수여 대상</label><select class="fselect" id="rw-member"><option value="">선택</option></select></div>
     <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="rw-amount" placeholder="10000" min="0"></div>
@@ -437,11 +432,6 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Sans KR',sans-se
     <div class="mbtns"><button class="mbtn-cancel" onclick="closeAddReward()">취소</button><button class="mbtn-ok" onclick="submitReward()">수여 ✓</button></div>
   </div>
 </div>
-
-<!-- ADD REWARD EXPENSE MODAL -->
-<div class="overlay" id="reward-expense-modal">
-  <div class="modal">
-    <div class="mtitle">🎁 상금 사용 내역</div>
     <div class="frow"><label class="flabel">날짜</label><input type="date" class="finput" id="rwe-date"></div>
     <div class="frow"><label class="flabel">내용</label><input type="text" class="finput" id="rwe-title" placeholder="예: 치킨 기프티콘, 스타벅스 상품권"></div>
     <div class="frow"><label class="flabel">금액 (원)</label><input type="number" class="finput" id="rwe-amount" placeholder="50000" min="0"></div>
@@ -636,7 +626,6 @@ function switchPage(id,el){
   if(id==='motivation')renderMotivation();
   if(id==='fine')renderFine();
   if(id==='ledger')renderFine();
-  if(id==='reward')renderFine();
 }
 
 // ── WEEKLY ──
@@ -1019,7 +1008,6 @@ function renderMotivation(){
   renderShareCard();
   renderBadges();
   renderStreaks();
-  renderShoeTracker();
   renderPaceChart();
 }
 
@@ -1143,28 +1131,6 @@ function getCurrentStreak(mLogs){
 }
 
 // SHOE TRACKER
-function renderShoeTracker(){
-  const shoeMap={};
-  logs.forEach(l=>{
-    if(!l.shoe||l.shoe==='-')return;
-    shoeMap[l.shoe]=(shoeMap[l.shoe]||0)+l.dist;
-  });
-  const shoes=Object.entries(shoeMap).sort((a,b)=>b[1]-a[1]);
-  const maxKm=Math.max(500,...shoes.map(s=>s[1]));
-  document.getElementById('shoe-tracker').innerHTML=!shoes.length
-    ?'<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">신발 데이터가 없어요</div>'
-    :shoes.map(([shoe,km])=>{
-      const pct=Math.min((km/500)*100,100);
-      const warn=km>=450;const color=warn?'#FFB800':'#FF4D1C';
-      return `<div class="shoe-row">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${shoe}</div>
-          <div class="shoe-bar-wrap"><div class="shoe-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-        </div>
-        <div style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;margin-left:10px;">${km.toFixed(0)}km${warn?' ⚠️':''}</div>
-      </div>`;
-    }).join('');
-}
 
 // PACE CHART
 function renderPaceChart(){
@@ -1222,10 +1188,7 @@ function importBackup(input){
       if(d.members) members=d.members;
       if(d.nextId) nextId=d.nextId;
       if(d.logs) logs=d.logs;
-      if(d.finePayments) finePayments=d.finePayments;
-      if(d.expenses) expenses=d.expenses;
-      if(d.FINE_AMOUNT) FINE_AMOUNT=d.FINE_AMOUNT;
-      if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
+            if(d.weeklyGoals) weeklyGoals=d.weeklyGoals;
       if(d.absences) absences=d.absences;
       if(d.joinWeeks) joinWeeks=d.joinWeeks;
       if(d.weekOverrides) weekOverrides=d.weekOverrides;
@@ -1946,378 +1909,21 @@ function renderFineKing(){
     </div>`).join('');
 }
 
-function renderFine(){
-  if(!fineWeekMonth)fineWeekMonth=curYM();
-  if(!fineWeek)fineWeek=curMonday();
-  document.getElementById('fine-amount-input').value=FINE_AMOUNT;
-  const months=getAvailableMonths();
-  document.getElementById('fine-month-pick').innerHTML=months.map(ym=>
-    `<div class="wtab ${ym===fineWeekMonth?'active':''}" style="font-weight:700;" onclick="pickFineMonth('${ym}')">${parseInt(ym.slice(5))}월${ym===curYM()?' ★':''}</div>`).join('');
-  const weeks=getWeeksInMonth(fineWeekMonth);
-  const curMon=fmt(curMonday());
-  const activeMon=fineWeek?fmt(fineWeek):curMon;
-  document.getElementById('fine-week-tabs').innerHTML=weeks.map(w=>{
-    const wf=fmt(w);return`<div class="wtab ${wf===activeMon?'active':''}" onclick="pickFineWeek('${wf}')">${fmtLabel(w)}${wf===curMon?' 이번주':''}</div>`;
-  }).join('');
-  document.getElementById('fine-week-label').textContent=fmtLabel(fineWeek||curMonday());
-
-  // Fine king
-  renderFineKing();
-
-  // Hero totals
-  const totalPot=finePayments.reduce((s,p)=>s+p.amount,0);
-  const totalSpent=expenses.reduce((s,e)=>s+e.amount,0);
-  const balance=totalPot-totalSpent;
-  const allWeeks=getAllPastWeeks();
-  let totalOwed=0;
-  members.forEach(m=>allWeeks.forEach(wStart=>{
-    const joinWeek=getMemberJoinWeek(m.id);
-    if(!joinWeek||wStart<joinWeek)return;
-    if(isAbsent(m.id,wStart))return;
-    const sun=getSunday(new Date(wStart));
-    const mg=getMemberGoal(m.id,wStart);
-    if(getDistInRange(m.id,wStart,fmt(sun))<mg)totalOwed+=FINE_AMOUNT;
-  }));
-  document.getElementById('f-total-pot').textContent=totalPot.toLocaleString()+'원';
-  document.getElementById('f-total-spent').textContent=totalSpent.toLocaleString()+'원';
-  document.getElementById('f-balance').textContent=balance.toLocaleString()+'원';
-  document.getElementById('f-unpaid').textContent=Math.max(0,totalOwed-totalPot).toLocaleString()+'원';
-
-  // Member cards
-  const start=fmt(fineWeek||curMonday());
-  const fines=calcFineForWeek(start);
-  const grid=document.getElementById('fine-member-grid');
-  grid.innerHTML=fines.map(f=>{
-    // 미참여 or 휴식 면제
-    if(f.exempt){
-      const badge = f.exemptReason==='휴식'
-        ? `<span style="background:rgba(41,121,255,.15);color:#64B5F6;border:1px solid rgba(41,121,255,.2);font-size:10px;padding:2px 7px;border-radius:4px;">🛌 휴식</span>`
-        : `<span style="background:var(--dark4);color:var(--text-dim);font-size:10px;padding:2px 7px;border-radius:4px;">미참여</span>`;
-      const cancelBtn = f.exemptReason==='휴식'
-        ? `<button class="sdanger-btn" style="font-size:10px;padding:3px 8px;" onclick="removeAbsence('${f.member}','${start}')">취소</button>`
-        : '';
-      return `<div class="fine-member-card paid-all">${avatarHtml(f.member,40)}
-        <div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div>
-        <div class="fmc-detail">${badge} 벌금 면제</div>
-        ${f.dist>0?`<div class="fmc-detail">달린 거리 ${f.dist.toFixed(1)}km</div>`:''}</div>
-        <div class="fmc-amount">${cancelBtn}</div>
-      </div>`;
-    }
-    // 목표 달성
-    if(f.achieved){
-      return `<div class="fine-member-card paid-all">${avatarHtml(f.member,40)}
-        <div class="fmc-info">
-          <div class="fmc-name">${memberName(f.member)}</div>
-          <div class="fmc-detail">달성 ${f.dist.toFixed(1)}km / 목표 ${getMemberGoal(f.member,start)}km</div>
-        </div>
-        <div class="fmc-amount">
-          <div class="fmc-owed" style="color:var(--green);font-size:14px;">✅ 목표달성</div>
-          <button onclick="addAbsence('${f.member}','${start}')" style="margin-top:6px;background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.3);color:#64B5F6;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">휴식 신청</button>
-        </div>
-      </div>`;
-    }
-    // 미달성
-    const isPaid=f.unpaid<=0;
-    return`<div class="fine-member-card ${isPaid?'paid-all':'has-fine'}">${avatarHtml(f.member,40)}
-      <div class="fmc-info"><div class="fmc-name">${memberName(f.member)}</div>
-      <div class="fmc-detail">달성 ${f.dist.toFixed(1)}km / 목표 ${getMemberGoal(f.member,start)}km</div>
-      <div class="fmc-detail">납부 ${f.paid.toLocaleString()}원 / 벌금 ${f.owed.toLocaleString()}원</div></div>
-      <div class="fmc-amount" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
-        <div class="fmc-owed" style="color:${isPaid?'var(--green)':'var(--orange)'};">${isPaid?'✅ 완납':'⚠️ '+f.unpaid.toLocaleString()+'원'}</div>
-        ${!isPaid?`<button class="paid-btn" onclick="markPaid('${f.member}','${start}')">납부처리</button>`:''}
-        <button onclick="addAbsence('${f.member}','${start}')" style="background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.3);color:#64B5F6;padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">휴식 신청</button>
-      </div></div>`;
-  }).join('');
-
-  // Payment history (with cancel)
-  const payList=document.getElementById('payment-list');
-  const allPayments=[...finePayments].sort((a,b)=>b.paidAt.localeCompare(a.paidAt));
-  payList.innerHTML=!allPayments.length?'<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">납부 내역이 없어요</div>'
-    :allPayments.map(p=>`<div class="expense-item">
-      <div class="exp-icon">💵</div>
-      <div class="exp-info"><div class="exp-title">${memberName(p.member)} 벌금 납부</div><div class="exp-date">${p.paidAt} · ${p.weekStart} 주차</div></div>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div class="exp-amount" style="color:var(--green);">+${p.amount.toLocaleString()}원</div>
-        <button class="exp-del" onclick="cancelPayment(${p.id})" title="납부 취소">↩️</button>
-      </div>
-    </div>`).join('');
-
-  // Expense list
-  const catIcon={상금:'🏆',회식:'🍖',용품:'👟',기타:'📦'};
-  const expList=document.getElementById('expense-list');
-  expList.innerHTML=!expenses.length?'<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">사용 내역이 없어요</div>'
-    :expenses.map(e=>`<div class="expense-item"><div class="exp-icon">${catIcon[e.category]||'📦'}</div><div class="exp-info"><div class="exp-title">${e.title}</div><div class="exp-date">${e.date} · ${e.category}</div></div><div style="display:flex;align-items:center;gap:6px;"><div class="exp-amount">-${e.amount.toLocaleString()}원</div><button class="exp-del" onclick="deleteExpense(${e.id})">✕</button></div></div>`).join('');
-}
 
 // ── REWARD SYSTEM ──
 let rewards = [];
 let rewardExpenses = [];
 let lottoHistory = []; // {id, weekStart, winner, tickets, date}
-let lottoWeek = null;
-const LOTTO_PRIZE = 5000;
 
-function getTickets(memberId, weekStart){
-  const sun = getSunday(new Date(weekStart));
-  const dist = getDistInRange(memberId, weekStart, fmt(sun));
-  // 7km 선택했어도 실제로 10km 이상 뛰면 추첨 참여 가능
-  if(dist >= 30) return 3;
-  if(dist >= 20) return 2;
-  if(dist >= 10) return 1;
-  return 0;
-}
 
-function getLottoWeekStart(){
-  return lottoWeek || fmt(curMonday());
-}
 
-let lottoWeekMonth = null;
 
-function renderLottoWeekTabs(){
-  if(!lottoWeekMonth) lottoWeekMonth = curYM();
-  const months = getAvailableMonths();
-  const curMon = fmt(curMonday());
-  const activeWeek = getLottoWeekStart();
-  const monthTabs = months.map(ym=>
-    `<div class="wtab ${ym===lottoWeekMonth?'active':''}" style="font-weight:700;" onclick="pickLottoMonth('${ym}')">${parseInt(ym.slice(5))}월${ym===curYM()?' ★':''}</div>`
-  ).join('');
-  const weeks = getWeeksInMonth(lottoWeekMonth);
-  const weekTabs = weeks.map(w=>{
-    const wf = fmt(w);
-    return `<div class="wtab ${wf===activeWeek?'active':''}" onclick="selectLottoWeek('${wf}')">${fmtLabel(w)}${wf===curMon?' ★':''}</div>`;
-  }).join('');
-  document.getElementById('lotto-week-tabs').innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;"><div class="week-tabs" style="margin:0;">${monthTabs}</div><div class="week-tabs" style="margin:0;">${weekTabs}</div></div>`;
-}
 
-function pickLottoMonth(ym){ lottoWeekMonth=ym; lottoWeek=null; renderReward(); }
-function selectLottoWeek(ms){ lottoWeek = ms; renderReward(); }
 
-function runLotto(){
-  const weekStart = getLottoWeekStart();
-  // 이미 추첨했는지 확인
-  if(lottoHistory.some(h=>h.weekStart===weekStart)){
-    toast('⚠️ 이번 주는 이미 추첨했어요!'); return;
-  }
-  // 추첨권 풀 생성
-  const pool = [];
-  members.forEach(m=>{
-    const t = getTickets(m.id, weekStart);
-    for(let i=0;i<t;i++) pool.push(m.id);
-  });
-  if(pool.length === 0){ toast('😅 추첨권이 없어요! 10km 이상 달린 멤버가 없어요.'); return; }
 
-  // 애니메이션
-  const resultEl = document.getElementById('lotto-result');
-  let count = 0;
-  const interval = setInterval(()=>{
-    const rand = pool[Math.floor(Math.random()*pool.length)];
-    resultEl.innerHTML = `<div style="font-size:28px;font-weight:700;color:var(--gold);text-align:center;">${getInitial(members.find(m=>m.id===rand)||{name:'?',emoji:'',initial:''})} ${memberName(rand)}</div>`;
-    count++;
-    if(count >= 15){
-      clearInterval(interval);
-      // 최종 당첨자
-      const winner = pool[Math.floor(Math.random()*pool.length)];
-      const ticketMap = {};
-      members.forEach(m=>{ ticketMap[m.id] = getTickets(m.id, weekStart); });
-      lottoHistory.push({id:Date.now(), weekStart, winner, tickets:ticketMap, date:fmt(new Date())});
-      // 마일리지 자동 적립
-      rewards.push({id:Date.now()+1, member:winner, amount:LOTTO_PRIZE, reason:`🎰 러닝 로또 당첨 (${weekStart} 주)`, date:fmt(new Date())});
-      saveData();
-      resultEl.innerHTML = `
-        <div style="text-align:center;">
-          <div style="font-size:14px;color:var(--text-dim);margin-bottom:8px;">🎉 이번 주 당첨자</div>
-          <div style="font-size:32px;font-weight:700;color:var(--gold);margin-bottom:4px;">${avatarHtml(winner,40)} ${memberName(winner)}</div>
-          <div style="font-size:14px;color:var(--green);margin-top:8px;">+${LOTTO_PRIZE.toLocaleString()}원 마일리지 적립!</div>
-        </div>`;
-      renderReward();
-      toast(`🎰 ${memberName(winner)}님 당첨! ${LOTTO_PRIZE.toLocaleString()}원 적립!`);
-    }
-  }, 80);
-}
 
-function deleteLotto(id){
-  if(!confirm('추첨 기록을 삭제할까요? 마일리지도 함께 삭제돼요.')) return;
-  const lotto = lottoHistory.find(h=>h.id===id);
-  if(lotto){
-    rewards = rewards.filter(r=>!(r.member===lotto.winner&&r.reason&&r.reason.includes('러닝 로또')&&r.reason.includes(lotto.weekStart)));
-  }
-  lottoHistory = lottoHistory.filter(h=>h.id!==id);
-  saveData(); renderReward(); toast('🗑️ 삭제됐어요');
-}
 
-function renderReward(){
-  renderLottoWeekTabs();
-  const weekStart = getLottoWeekStart();
 
-  // 히어로
-  const totalPot = rewards.reduce((s,r)=>s+r.amount,0);
-  const totalUsed = rewardExpenses.reduce((s,e)=>s+e.amount,0);
-  document.getElementById('rw-total-pot').textContent = totalPot.toLocaleString()+'원';
-  document.getElementById('rw-total-used').textContent = totalUsed.toLocaleString()+'원';
-  document.getElementById('rw-balance').textContent = (totalPot-totalUsed).toLocaleString()+'원';
-  document.getElementById('rw-count').textContent = lottoHistory.length;
-
-  // 추첨권 현황
-  const alreadyDrawn = lottoHistory.some(h=>h.weekStart===weekStart);
-  document.getElementById('lotto-tickets').innerHTML = members.map(m=>{
-    const t = getTickets(m.id, weekStart);
-    const mg = getMemberGoal(m.id, weekStart);
-    const sun = getSunday(new Date(weekStart));
-    const dist = getDistInRange(m.id, weekStart, fmt(sun));
-    const c = memberColor(m.id);
-    const is7km = mg < 10;
-    return `<div style="background:var(--dark3);border:1px solid ${t>0?'rgba(255,184,0,.3)':'var(--border)'};border-radius:10px;padding:12px;text-align:center;">
-      ${avatarHtml(m.id,32)}
-      <div style="font-size:12px;font-weight:700;margin:6px 0 4px;">${m.name}</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">${dist.toFixed(1)}km</div>
-      ${is7km && getTickets(m.id, weekStart) === 0
-        ? `<div style="font-size:11px;color:var(--text-dim);">7km 선택 · 미달성</div>`
-        : is7km && getTickets(m.id, weekStart) > 0
-        ? `<div style="font-size:18px;">${'🎟️'.repeat(getTickets(m.id, weekStart))}</div>
-           <div style="font-size:10px;color:var(--green);">${getTickets(m.id, weekStart)}장 (초과달성!)</div>`
-        : `<div style="font-size:18px;">${'🎟️'.repeat(t)||'<span style="color:var(--text-dim);font-size:11px;">0장</span>'}</div>
-           <div style="font-size:10px;color:var(--text-dim);">${t}장</div>`}
-    </div>`;
-  }).join('');
-
-  // 추첨 결과 표시 (이미 추첨한 경우)
-  if(alreadyDrawn){
-    const drawn = lottoHistory.find(h=>h.weekStart===weekStart);
-    document.getElementById('lotto-result').innerHTML = `
-      <div style="text-align:center;">
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">✅ 이번 주 추첨 완료</div>
-        <div style="font-size:20px;font-weight:700;color:var(--gold);">🎉 ${memberName(drawn.winner)} 당첨!</div>
-        <div style="font-size:11px;color:var(--green);margin-top:4px;">+${LOTTO_PRIZE.toLocaleString()}원 마일리지 적립</div>
-      </div>`;
-  } else {
-    document.getElementById('lotto-result').innerHTML = '';
-  }
-
-  // 추첨 기록
-  document.getElementById('lotto-history-list').innerHTML = !lottoHistory.length ? ''
-    : `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">추첨 기록</div>
-        ${[...lottoHistory].sort((a,b)=>b.date.localeCompare(a.date)).map(h=>`
-          <div class="expense-item">
-            <div class="exp-icon">🎰</div>
-            <div class="exp-info">
-              <div class="exp-title">${memberName(h.winner)} 당첨 🎉</div>
-              <div class="exp-date">${h.weekStart} 주 · ${h.date}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div style="font-size:13px;font-weight:700;color:var(--gold);">+${LOTTO_PRIZE.toLocaleString()}원</div>
-              <button class="exp-del" onclick="deleteLotto(${h.id})">✕</button>
-            </div>
-          </div>`).join('')}
-      </div>`;
-
-  // 회원별 누적
-  const memberTotals = {};
-  members.forEach(m=>{ memberTotals[m.id] = rewards.filter(r=>r.member===m.id).reduce((s,r)=>s+r.amount,0); });
-  const sorted = [...members].sort((a,b)=>memberTotals[b.id]-memberTotals[a.id]);
-  const maxAmt = Math.max(1,...Object.values(memberTotals));
-  document.getElementById('rw-member-grid').innerHTML = sorted.map((m,i)=>{
-    const amt = memberTotals[m.id];
-    const c = memberColor(m.id);
-    const medal = i===0&&amt>0?'👑 ':i===1&&amt>0?'🥈 ':i===2&&amt>0?'🥉 ':'';
-    const winCount = lottoHistory.filter(h=>h.winner===m.id).length;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dark3);border-radius:10px;border:1px solid ${amt>0?'rgba(255,184,0,.2)':'var(--border)'};">
-      ${avatarHtml(m.id,34)}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;margin-bottom:5px;">${medal}${m.name} ${winCount>0?`<span style="font-size:10px;color:var(--gold);">🎰×${winCount}</span>`:''}</div>
-        <div style="height:5px;background:var(--dark4);border-radius:3px;overflow:hidden;">
-          <div style="height:100%;width:${Math.round((amt/maxAmt)*100)}%;background:var(--gold);border-radius:3px;"></div>
-        </div>
-      </div>
-      <div style="font-size:16px;font-weight:700;color:var(--gold);white-space:nowrap;">${amt.toLocaleString()}원</div>
-    </div>`;
-  }).join('');
-
-  // 적립 내역
-  document.getElementById('rw-history').innerHTML = !rewards.length
-    ? '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">아직 적립 내역이 없어요</div>'
-    : [...rewards].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`
-      <div class="expense-item">
-        <div class="exp-icon">${r.reason&&r.reason.includes('로또')?'🎰':'🎖️'}</div>
-        <div class="exp-info">
-          <div class="exp-title">${memberName(r.member)} · ${r.reason||'마일리지 수여'}</div>
-          <div class="exp-date">${r.date}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div style="font-size:15px;font-weight:700;color:var(--gold);">+${r.amount.toLocaleString()}원</div>
-          <button class="exp-del" onclick="deleteReward(${r.id})">✕</button>
-        </div>
-      </div>`).join('');
-
-  // 사용 내역
-  document.getElementById('rw-expense-list').innerHTML = !rewardExpenses.length
-    ? '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:16px">사용 내역이 없어요</div>'
-    : [...rewardExpenses].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`
-      <div class="expense-item">
-        <div class="exp-icon">🎁</div>
-        <div class="exp-info">
-          <div class="exp-title">${e.title}</div>
-          <div class="exp-date">${e.date} · ${e.member==='전체'?'전체':memberName(e.member)}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div class="exp-amount">-${e.amount.toLocaleString()}원</div>
-          <button class="exp-del" onclick="deleteRewardExpense(${e.id})">✕</button>
-        </div>
-      </div>`).join('');
-}
-
-function openAddReward(){
-  document.getElementById('rw-date').value = fmt(new Date());
-  document.getElementById('rw-member').innerHTML = '<option value="">선택</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-  document.getElementById('rw-amount').value = '';
-  document.getElementById('rw-reason').value = '';
-  document.getElementById('reward-modal').classList.add('show');
-}
-function closeAddReward(){ document.getElementById('reward-modal').classList.remove('show'); }
-function submitReward(){
-  const date = document.getElementById('rw-date').value;
-  const member = document.getElementById('rw-member').value;
-  const amount = parseInt(document.getElementById('rw-amount').value);
-  const reason = document.getElementById('rw-reason').value.trim();
-  if(!date||!member||!amount){ alert('날짜, 대상, 금액은 필수예요!'); return; }
-  rewards.push({id:Date.now(), member, amount, reason, date});
-  rewards.sort((a,b)=>b.date.localeCompare(a.date));
-  closeAddReward(); saveData(); renderReward();
-  toast(`🎖️ ${memberName(member)}에게 ${amount.toLocaleString()}원 수여됐어요!`);
-}
-function deleteReward(id){
-  if(!confirm('이 수여 내역을 삭제할까요?')) return;
-  rewards = rewards.filter(r=>r.id!==id);
-  saveData(); renderReward(); toast('🗑️ 삭제됐어요');
-}
-
-function openAddRewardExpense(){
-  document.getElementById('rwe-date').value = fmt(new Date());
-  document.getElementById('rwe-title').value = '';
-  document.getElementById('rwe-amount').value = '';
-  document.getElementById('rwe-member').innerHTML = '<option value="전체">전체</option>'+members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-  document.getElementById('reward-expense-modal').classList.add('show');
-}
-function closeAddRewardExpense(){ document.getElementById('reward-expense-modal').classList.remove('show'); }
-function submitRewardExpense(){
-  const date = document.getElementById('rwe-date').value;
-  const title = document.getElementById('rwe-title').value.trim();
-  const amount = parseInt(document.getElementById('rwe-amount').value);
-  const member = document.getElementById('rwe-member').value;
-  if(!date||!title||!amount){ alert('날짜, 내용, 금액은 필수예요!'); return; }
-  rewardExpenses.push({id:Date.now(), date, title, amount, member});
-  rewardExpenses.sort((a,b)=>b.date.localeCompare(a.date));
-  closeAddRewardExpense(); saveData(); renderReward();
-  toast('🎁 사용 내역이 추가됐어요!');
-}
-function deleteRewardExpense(id){
-  if(!confirm('삭제할까요?')) return;
-  rewardExpenses = rewardExpenses.filter(e=>e.id!==id);
-  saveData(); renderReward(); toast('🗑️ 삭제됐어요');
-}
-
-['reward-modal','reward-expense-modal'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
-});
 
 function pickFineMonth(ym){fineWeekMonth=ym;fineWeek=null;renderFine();}
 function pickFineWeek(ms){fineWeek=new Date(ms);renderFine();}
