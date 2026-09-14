@@ -1737,6 +1737,8 @@ function saveSettings(){
 // ── 가계부 (벌금 관리) ──
 let ledgerIncome = [];  // {id, date, title, amount, category, member}
 let ledgerSpend = [];   // {id, date, title, amount, category}
+let absences = [];
+let joinWeeks = {};
 
 function renderFine(){
   const totalIncome = ledgerIncome.reduce((s,r)=>s+r.amount,0);
@@ -1865,10 +1867,7 @@ function deleteSpend(id){
 });
 
 // 휴식 신청 {id, member, weekStart, reason}
-let absences = [];
-
-// 회원별 참여 시작 주차 {memberId: 'YYYY-MM-DD'} — 크루장이 직접 설정
-let joinWeeks = {};
+// 휴식 신청 및 참여 시작 주차는 상단에서 선언됨
 
 function getMemberJoinWeek(memberId){
   // 수동 설정값 우선
